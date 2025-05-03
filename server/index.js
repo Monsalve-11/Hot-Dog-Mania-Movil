@@ -67,6 +67,22 @@ app.post("/login", (req, res) => {
   );
 });
 
+app.get("/productos", (req, res) => {
+  const query = `
+    SELECT id, nombre, descripcion, precio, imagen_url, seccion, cantidad
+    FROM productos
+  `;
+
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error("❌ Error al obtener productos:", err);
+      return res.status(500).json({ message: "Error al obtener productos" });
+    }
+
+    return res.status(200).json(result);
+  });
+});
+
 app.listen(3001, () => {
   console.log("🚀 Servidor corriendo en el puerto 3001");
 });

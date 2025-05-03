@@ -17,18 +17,46 @@ export default function RegisterScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleRegister = () => {
-    if (!name || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Por favor completa todos los campos");
+    const errors = [];
+
+    // Validación nombre
+    if (!name.trim()) {
+      errors.push("• El nombre y apellido es obligatorio");
+    } else {
+      const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
+      if (!nameRegex.test(name.trim())) {
+        errors.push("• El nombre y apellido solo debe contener letras");
+      }
+    }
+
+    // Validación correo
+    if (!email.trim()) {
+      errors.push("• El correo electrónico es obligatorio");
+    } else if (!email.includes("@")) {
+      errors.push("• El correo electrónico debe contener '@'");
+    }
+
+    // Validación contraseñas
+    if (!password) {
+      errors.push("• La contraseña es obligatoria");
+    }
+
+    if (!confirmPassword) {
+      errors.push("• Confirmar la contraseña es obligatorio");
+    }
+
+    if (password && confirmPassword && password !== confirmPassword) {
+      errors.push("• Las contraseñas no coinciden");
+    }
+
+    // Mostrar errores si hay
+    if (errors.length > 0) {
+      Alert.alert("Errores encontrados", errors.join("\n"));
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Las contraseñas no coinciden");
-      return;
-    }
-
-    fetch("http://192.168.1.36:3001/register", {
-      // ← Cambia esto si usas un dispositivo físico
+    // Si pasa la validación, registrar
+    fetch("http://192.168.1.6:3001/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

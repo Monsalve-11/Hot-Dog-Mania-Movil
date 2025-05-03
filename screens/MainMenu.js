@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -14,26 +13,28 @@ import BottomNav from "../components/barraInferior";
 
 const categorias = ["Perros", "Bebidas", "Combos", "Promociones"];
 
-const productosEjemplo = [
-  {
-    id: 1,
-    nombre: "Perro Americano",
-    descripcion: "Salchicha americana y salsas.",
-    precio: 12000,
-    imagen: "../assets/americano.jpeg",
-  },
-  {
-    id: 2,
-    nombre: "Perro con maicitos",
-    descripcion: "Salchicha, maicitos, queso y tocineta.",
-    precio: 15000,
-    imagen: "../assets/americano.jpeg",
-  },
-];
-
 export default function MainMenu() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Perros");
+  const [productos, setProductos] = useState([]);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    fetch("http://192.168.1.6:3001/productos")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        setProductos(data);
+      })
+      .catch((err) => {
+        console.error("Error al obtener productos:", err);
+      });
+  }, []);
+
+  const productosFiltrados = productos.filter(
+    (prod) => prod.seccion === categoriaSeleccionada
+  );
 
   return (
     <View style={styles.container}>
@@ -44,11 +45,10 @@ export default function MainMenu() {
         <Icon name="shopping-cart" size={24} onPress={() => alert("Carrito")} />
       </View>
 
-      {/* Buscar */}
+      {/* Pregunta */}
       <Text style={styles.question}>¿Qué hay para comer hoy?</Text>
-      <TextInput placeholder="Buscar..." style={styles.input} />
 
-      {/* Tabs */}
+      {/* Categorías */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -77,9 +77,13 @@ export default function MainMenu() {
         showsHorizontalScrollIndicator={false}
         style={styles.cardScroll}
       >
-        {productosEjemplo.map((prod) => (
+        {productosFiltrados.map((prod) => (
           <View key={prod.id} style={styles.card}>
-            <Image source={{ uri: prod.imagen }} style={styles.image} />
+            <Image
+              source={{ uri: prod.imagen_url }} // se usa imagen_url desde DB
+              style={styles.image}
+              resizeMode="cover"
+            />
             <Text style={styles.productName}>{prod.nombre}</Text>
             <Text style={styles.productDesc}>{prod.descripcion}</Text>
             <Text style={styles.productPrice}>
