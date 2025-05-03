@@ -26,20 +26,22 @@ export default function LoginScreen({ navigation }) {
       contrasena: password,
     })
       .then((response) => {
-        if (response.data.message === "Inicio de sesión exitoso") {
-          Alert.alert("Bienvenido", "Inicio de sesión exitoso");
+        console.log("Respuesta del servidor:", response.data);
+        navigation.navigate("MainMenu");
+        // Asegúrate que tu backend retorne { success: true, message: "..."}
+        if (response.data.success) {
+          Alert.alert("Bienvenido", response.data.message || "Inicio exitoso");
           navigation.navigate("MainMenu");
         } else {
-          Alert.alert("Error", response.data.message);
+          Alert.alert(
+            "Error",
+            response.data.message || "Credenciales incorrectas"
+          );
         }
       })
       .catch((error) => {
         console.error("Login error:", error);
-        if (error.response?.status === 401) {
-          Alert.alert("Error", "Credenciales incorrectas");
-        } else {
-          Alert.alert("Error", "No se pudo conectar con el servidor");
-        }
+        Alert.alert("Error", "No se pudo conectar con el servidor");
       });
   };
 
