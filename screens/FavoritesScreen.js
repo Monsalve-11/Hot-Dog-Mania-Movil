@@ -8,15 +8,18 @@ const FavoritesScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Ionicons name="menu" size={28} color="black" />
-        <View style={styles.logo}>
-          <Text style={styles.star}>★</Text>
-          <Text style={styles.logoText}>HOT DOG</Text>
-          <Text style={styles.logoText}>MANIA</Text>
-          <Text style={styles.star}>★</Text>
-        </View>
-        <FontAwesome name="shopping-cart" size={24} color="black" />
-      </View>
+  <Ionicons name="menu" size={28} color="black" />
+  
+  <View style={styles.logo}>
+    <Text style={styles.star}>★</Text>
+    <Text style={styles.logoText}>HOT DOG</Text>
+    <Text style={styles.logoText}>MANIA</Text>
+    <Text style={styles.star}>★</Text>
+  </View>
+
+  <FontAwesome name="shopping-cart" size={24} color="black" />
+</View>
+
 
       {/* Título */}
       <Text style={styles.title}>FAVORITOS</Text>
@@ -57,16 +60,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logo: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 5, // o usa marginHorizontal en los elementos
   },
   logoText: {
+    fontSize: 18,
     fontWeight: "bold",
-    fontSize: 14,
-    textAlign: "center",
+    color: "black",
+    marginHorizontal: 4,
   },
   star: {
     fontSize: 18,
+    color: "gold",
   },
+  
   title: {
     fontSize: 22,
     fontWeight: "bold",

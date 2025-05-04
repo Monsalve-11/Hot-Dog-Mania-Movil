@@ -6,16 +6,26 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Animated,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useNavigation } from "@react-navigation/native";
 import BottomNav from "../components/barraInferior";
+import ProductoModal from "../components/ProductoModal";
+import CarritoModal from "../components/CarritoModal";
 
 const categorias = ["Perros", "Bebidas", "Combos", "Promociones"];
 
 export default function MainMenu() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Perros");
   const [productos, setProductos] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+  const [carrito, setCarrito] = useState([]);
+  const [carritoVisible, setCarritoVisible] = useState(false);
+  const [mensajeVisible, setMensajeVisible] = useState(false);
+  const animacionCarrito = useState(new Animated.Value(1))[0];
+
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -36,14 +46,73 @@ export default function MainMenu() {
     (prod) => prod.seccion === categoriaSeleccionada
   );
 
+  const abrirModal = (producto) => {
+    setProductoSeleccionado(producto);
+    setModalVisible(true);
+  };
+
+  const animarCarrito = () => {
+    Animated.sequence([
+      Animated.timing(animacionCarrito, {
+        toValue: 1.5,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(animacionCarrito, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const agregarAlCarrito = (producto, opciones) => {
+    setCarrito((prev) => [...prev, { producto, opciones }]);
+    setMensajeVisible(true);
+    animarCarrito();
+
+    setTimeout(() => {
+      setMensajeVisible(false);
+    }, 3000);
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Icon name="bars" size={24} onPress={() => alert("Menú")} />
-        <Text style={styles.logoText}>HOT DOG {"\n"}MANIA</Text>
-        <Icon name="shopping-cart" size={24} onPress={() => alert("Carrito")} />
+
+        <View style={styles.logo}>
+          <Text style={styles.star}>★</Text>
+          <Text style={styles.logoText}>HOT DOG MANIA</Text>
+          <Text style={styles.star}>★</Text>
+        </View>
+
+        <Animated.View style={{ transform: [{ scale: animacionCarrito }] }}>
+          <View>
+            <Icon
+              name="shopping-cart"
+              size={28}
+              onPress={() => setCarritoVisible(true)}
+            />
+            {carrito.length > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{carrito.length}</Text>
+              </View>
+            )}
+          </View>
+        </Animated.View>
       </View>
+
+
+      {/* Mensaje temporal */}
+      {mensajeVisible && (
+        <View style={styles.toast}>
+          <Icon name="check" size={40} color="green" />
+          <Text style={styles.toastText}>Producto agregado al carrito.</Text>
+        </View>
+      )}
+
 
       {/* Pregunta */}
       <Text style={styles.question}>¿Qué hay para comer hoy?</Text>
@@ -73,7 +142,6 @@ export default function MainMenu() {
         ))}
       </ScrollView>
 
-
       {/* Productos */}
       <ScrollView
         horizontal
@@ -83,7 +151,7 @@ export default function MainMenu() {
         {productosFiltrados.map((prod) => (
           <View key={prod.id} style={styles.card}>
             <Image
-              source={{ uri: prod.imagen_url }} // se usa imagen_url desde DB
+              source={{ uri: prod.imagen_url }}
               style={styles.image}
               resizeMode="cover"
             />
@@ -92,18 +160,37 @@ export default function MainMenu() {
             <Text style={styles.productPrice}>
               ${prod.precio.toLocaleString()}
             </Text>
-            <TouchableOpacity style={styles.buyButton}>
+            <TouchableOpacity
+              style={styles.buyButton}
+              onPress={() => abrirModal(prod)}
+            >
               <Text style={styles.buyButtonText}>Comprar</Text>
             </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
 
+      {/* Modal de producto */}
+      {productoSeleccionado && (
+        <ProductoModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          producto={productoSeleccionado}
+          onAgregar={agregarAlCarrito}
+        />
+      )}
+
+      {/* Modal del carrito */}
+      <CarritoModal
+        visible={carritoVisible}
+        onClose={() => setCarritoVisible(false)}
+        carrito={carrito}
+      />
+
       <BottomNav />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -116,12 +203,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "#fff",
   },
-  logoText: {
-    fontWeight: "bold",
+  
+  logo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  
+  star: {
     fontSize: 18,
-    textAlign: "center",
+    color: "gold",
+    marginHorizontal: 5,
   },
+  
+  logoText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "black",
+  },
+  
   question: {
     fontSize: 16,
     marginTop: 20,
@@ -171,7 +275,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
-  
+
   image: {
     width: "100%",
     height: 100,
@@ -215,4 +319,45 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     alignItems: "center",
   },
+  toast: {
+    position: "absolute",
+    top: 100,
+    alignSelf: "center",
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 10,
+    flexDirection: "column",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 5,
+    zIndex: 999,
+  },
+  toastText: {
+    marginTop: 10,
+    color: "#333",
+    fontSize: 16,
+  },
+
+  badge: {
+    position: "absolute",
+    top: -6,
+    right: -10,
+    backgroundColor: "red",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+
+
 });
