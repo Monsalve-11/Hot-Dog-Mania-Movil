@@ -21,7 +21,7 @@ export default function LoginScreen({ navigation }) {
       return;
     }
 
-    Axios.post("http://192.168.1.6:3001/login", {
+    Axios.post("http://192.168.101.5:3001/login", {
       gmail: email,
       contrasena: password,
     })

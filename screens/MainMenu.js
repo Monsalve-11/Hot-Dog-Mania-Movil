@@ -19,7 +19,7 @@ export default function MainMenu() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    fetch("http://192.168.1.6:3001/productos")
+    fetch("http://192.168.101.5:3001/productos")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -58,6 +58,8 @@ export default function MainMenu() {
           <TouchableOpacity
             key={cat}
             onPress={() => setCategoriaSeleccionada(cat)}
+            style={styles.tabButton}
+            activeOpacity={0.6}
           >
             <Text
               style={[
@@ -70,6 +72,7 @@ export default function MainMenu() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
 
       {/* Productos */}
       <ScrollView
@@ -104,9 +107,11 @@ export default function MainMenu() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     backgroundColor: "#f3f4f6",
   },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -130,26 +135,43 @@ const styles = StyleSheet.create({
   },
   tabScroll: {
     marginTop: 20,
+    maxHeight: 40, // Limita altura para evitar zona de toque extra
+  },
+  tabButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   tab: {
-    marginRight: 16,
     fontSize: 14,
     color: "gray",
   },
   tabSelected: {
     color: "red",
     textDecorationLine: "underline",
+    fontWeight: "bold",
   },
+
   cardScroll: {
-    marginTop: 20,
+    marginTop: 5,
+    paddingBottom: 10,
   },
+
   card: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
+    borderRadius: 10,
     padding: 10,
-    borderRadius: 20,
-    marginRight: 16,
-    width: 180,
+    marginRight: 10,
+    width: 160,
+    height: 290, // más bajo para recortar verticalmente
+    justifyContent: 'space-between', // distribuye bien los elementos
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
+  
   image: {
     width: "100%",
     height: 100,
@@ -171,10 +193,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   buyButton: {
-    backgroundColor: "red",
+    backgroundColor: 'red',
     paddingVertical: 6,
-    borderRadius: 30,
-    marginTop: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginTop: 8, // controlado
   },
   buyButtonText: {
     color: "white",

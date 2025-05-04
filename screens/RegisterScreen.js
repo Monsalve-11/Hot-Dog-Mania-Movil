@@ -16,47 +16,72 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+
+  const validateName = (text) => {
+    setName(text);
+    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
+    if (!regex.test(text.trim())) {
+      setNameError("El nombre solo debe contener letras.");
+    } else {
+      setNameError("");
+    }
+  };
+
+  const validateEmail = (text) => {
+    setEmail(text);
+    if (!text.includes("@")) {
+      setEmailError("El correo debe contener '@'.");
+    } else {
+      setEmailError("");
+    }
+  };
+
+  const validateConfirmPassword = (text) => {
+    setConfirmPassword(text);
+    if (password && text !== password) {
+      setConfirmPasswordError("Las contraseñas no coinciden.");
+    } else {
+      setConfirmPasswordError("");
+    }
+  };
+
   const handleRegister = () => {
     const errors = [];
 
-    // Validación nombre
     if (!name.trim()) {
       errors.push("• El nombre y apellido es obligatorio");
-    } else {
-      const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
-      if (!nameRegex.test(name.trim())) {
-        errors.push("• El nombre y apellido solo debe contener letras");
-      }
+      setNameError("El nombre es obligatorio.");
     }
 
-    // Validación correo
     if (!email.trim()) {
       errors.push("• El correo electrónico es obligatorio");
-    } else if (!email.includes("@")) {
-      errors.push("• El correo electrónico debe contener '@'");
+      setEmailError("El correo es obligatorio.");
     }
 
-    // Validación contraseñas
     if (!password) {
       errors.push("• La contraseña es obligatoria");
     }
 
     if (!confirmPassword) {
       errors.push("• Confirmar la contraseña es obligatorio");
+      setConfirmPasswordError("Confirmar la contraseña es obligatorio.");
     }
 
     if (password && confirmPassword && password !== confirmPassword) {
       errors.push("• Las contraseñas no coinciden");
+      setConfirmPasswordError("Las contraseñas no coinciden.");
     }
 
-    // Mostrar errores si hay
     if (errors.length > 0) {
       Alert.alert("Errores encontrados", errors.join("\n"));
       return;
     }
 
     // Si pasa la validación, registrar
-    fetch("http://192.168.1.6:3001/register", {
+    fetch("http://192.168.101.5:3001/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -102,19 +127,21 @@ export default function RegisterScreen({ navigation }) {
             placeholder="Nombre y apellido"
             placeholderTextColor="#666"
             value={name}
-            onChangeText={setName}
+            onChangeText={validateName}
             autoCapitalize="words"
           />
+          {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
 
           <TextInput
             style={styles.input}
             placeholder="Correo electrónico"
             placeholderTextColor="#666"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={validateEmail}
             keyboardType="email-address"
             autoCapitalize="none"
           />
+          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
           <TextInput
             style={styles.input}
@@ -130,9 +157,12 @@ export default function RegisterScreen({ navigation }) {
             placeholder="Confirmar contraseña"
             placeholderTextColor="#666"
             value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            onChangeText={validateConfirmPassword}
             secureTextEntry
           />
+          {confirmPasswordError ? (
+            <Text style={styles.errorText}>{confirmPasswordError}</Text>
+          ) : null}
 
           <TouchableOpacity
             style={styles.registerButton}
@@ -212,7 +242,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 10,
     paddingHorizontal: 15,
-    marginBottom: 15,
+    marginBottom: 10,
     fontSize: 16,
     borderWidth: 1,
     borderColor: "#ddd",
@@ -244,5 +274,11 @@ const styles = StyleSheet.create({
     color: "#ff3b30",
     fontSize: 14,
     fontWeight: "bold",
+  },
+  errorText: {
+    color: "#ff3b30",
+    fontSize: 14,
+    marginBottom: 10,
+    alignSelf: "flex-start",
   },
 });
