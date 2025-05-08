@@ -10,7 +10,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:8081", // tu frontend en dev
-      "http://192.168.1.36:8081", // si accedes por IP
+      "http://192.168.1.34:8081", // si accedes por IP
     ],
     credentials: true,
   })
@@ -33,17 +33,18 @@ db.connect((err) => {
   }
 });
 
+let userId;
+let nombre;
+let gmail;
 // 4. Store de sesiones en MySQL
-const sessionStore = new MySQLStore({
-  host: "localhost",
-  port: 3306,
-  user: "root",
-  password: "",
-  database: "movil",
-  clearExpired: true,
-  checkExpirationInterval: 900000, // 15 min
-  expiration: 86400000, // 1 día
-});
+const sessionStore = new MySQLStore(
+  {
+    expiration: 86400000, // Tiempo de expiración de la sesión en milisegundos (1 día)
+    checkExpirationInterval: 900000, // Intervalo de tiempo para limpiar sesiones expiradas (15 minutos)
+    clearExpired: true, // Limpiar sesiones expiradas
+  },
+  db // Usar la conexión a la base de datos MySQL
+);
 
 // 5. Middleware de sesión
 app.use(
@@ -119,36 +120,26 @@ app.post("/login", (req, res) => {
   });
 });
 
+// Ruta para obtener los datos del usuario
 app.get("/me", (req, res) => {
-  let userId = req.session.userId; // Asegúrate de que el userId está en la sesión
+  console.log("Cookies de la solicitud:", req.headers.cookie); // Verifica si la cookie está siendo enviada
 
+  let userId = req.session.userId;
   if (!userId) {
     return res.status(401).json({ message: "No has iniciado sesión." });
   }
 
-  // Verifica el valor del userId antes de ejecutar la consulta
-  console.log("userId desde sesión:", userId);
-
-  const query = "SELECT id, nombre, gmail FROM usuarios WHERE id = " + userId;
-  console.log(query);
-  db.query(query, (err, results) => {
+  const query = "SELECT id, nombre, gmail FROM usuarios WHERE id = ?";
+  db.query(query, [userId], (err, results) => {
     if (err) {
-      console.error("Error al obtener los datos del usuario:", err);
       return res
         .status(500)
         .json({ message: "Error al obtener los datos del usuario" });
     }
     if (results.length > 0) {
-      console.log("ID:", results[0].id);
-      console.log("Nombre:", results[0].nombre);
-      console.log("Gmail:", results[0].gmail);
-      return res.json({
-        id: results[0].id,
-        nombre: results[0].nombre,
-        gmail: results[0].gmail,
-      });
+      res.json(results[0]); // Responde con los datos del usuario
     } else {
-      return res.status(404).json({ message: "Usuario no encontrado" });
+      res.status(404).json({ message: "Usuario no encontrado" });
     }
   });
 });

@@ -8,6 +8,7 @@ import {
   Alert,
 } from "react-native";
 import axios from "axios";
+import CookieManager from "@react-native-cookies/cookies";
 import BottomNav from "../components/barraInferior";
 
 export default function ProfileScreen({ navigation }) {
@@ -18,21 +19,24 @@ export default function ProfileScreen({ navigation }) {
   useEffect(() => {
     // Hacemos la solicitud GET para obtener los datos del usuario
     axios
-      .get("http://10.10.13.61:3001/me") // Asegúrate de que withCredentials esté activado
+      .get("http://192.168.1.34:3001/me", { withCredentials: true })
       .then((response) => {
         setUser(response.data); // Guardamos los datos del usuario en el estado
-        console.log("datos de mee", response.data);
+        console.log("Datos de usuario:", response.data);
       })
       .catch((error) => {
         console.error("Error al obtener los datos del usuario:", error);
-        Alert.alert("Error", "No se pudo cargar los datos del usuario.");
-      })
-      .finally(() => setLoading(false)); // Dejamos de mostrar el loading cuando se complete la solicitud
+      });
+
+    // Verificar las cookies
+    CookieManager.get("http://192.168.1.34:3001").then((cookies) => {
+      console.log("Cookies disponibles:", cookies);
+    });
   }, []); // Este useEffect se ejecuta solo una vez cuando la pantalla se monta
 
   const handleLogout = () => {
     axios
-      .post("http://10.10.13.61:3001/logout", {}, { withCredentials: true })
+      .post("http://192.168.1.34:3001/logout", {}, { withCredentials: true })
       .then(() => {
         navigation.replace("Login"); // Redirigir a la pantalla de login
       })
@@ -54,6 +58,7 @@ export default function ProfileScreen({ navigation }) {
     return (
       <View style={styles.container}>
         <Text style={styles.text}>No hay datos de usuario</Text>
+        <BottomNav />
       </View>
     );
   }
