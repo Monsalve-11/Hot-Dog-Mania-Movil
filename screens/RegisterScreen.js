@@ -81,7 +81,7 @@ export default function RegisterScreen({ navigation }) {
     }
 
     // Si pasa la validación, registrar
-    fetch("http://192.168.101.5:3001/register", {
+    fetch("http://10.10.13.61:3001/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -141,7 +141,9 @@ export default function RegisterScreen({ navigation }) {
             keyboardType="email-address"
             autoCapitalize="none"
           />
-          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+          {emailError ? (
+            <Text style={styles.errorText}>{emailError}</Text>
+          ) : null}
 
           <TextInput
             style={styles.input}

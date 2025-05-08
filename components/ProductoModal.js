@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Modal,
   View,
@@ -7,12 +7,42 @@ import {
   TouchableOpacity,
   StyleSheet,
   CheckBox,
-} from 'react-native';
+} from "react-native";
 
+// Función para enviar el favorito a la base de datos
+const actualizarFavorito = async (userId, productId, esFavorito) => {
+  const url = esFavorito
+    ? `http://10.10.13.61:3001/favoritos/agregar` // Cambiar la URL según tu API
+    : `http://10.10.13.61:3001/favoritos/eliminar`; // Cambiar la URL según tu API
 
+  const body = JSON.stringify({
+    user_id: userId,
+    product_id: productId,
+  });
 
+  const headers = {
+    "Content-Type": "application/json",
+  };
 
-const ProductoModal = ({ visible, onClose, producto, onAgregar }) => {
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body,
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al actualizar el favorito");
+    }
+    console.log(
+      `Producto ${esFavorito ? "agregado" : "eliminado"} de favoritos.`
+    );
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const ProductoModal = ({ visible, onClose, producto, onAgregar, userId }) => {
   const [cantidad, setCantidad] = useState(1);
   const [sinSalsas, setSinSalsas] = useState(false);
   const [sinVegetales, setSinVegetales] = useState(false);
@@ -36,24 +66,29 @@ const ProductoModal = ({ visible, onClose, producto, onAgregar }) => {
     onClose();
   };
 
+  const handleFavorito = async () => {
+    setFavorito(!favorito); // Cambiar el estado del corazón
+    await actualizarFavorito(userId, producto.id, !favorito); // Llamada para agregar o eliminar
+  };
+
   return (
     <Modal transparent={true} visible={visible} animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.modal}>
-
           {/* Botón cerrar */}
           <TouchableOpacity style={styles.close} onPress={onClose}>
             <Text style={styles.closeText}>X</Text>
           </TouchableOpacity>
 
           {/* Botón corazón */}
-          <TouchableOpacity style={styles.heart} onPress={() => setFavorito(!favorito)}>
-            <Text style={{ fontSize: 24, color: favorito ? 'red' : 'gray' }}>♥</Text>
+          <TouchableOpacity style={styles.heart} onPress={handleFavorito}>
+            <Text style={{ fontSize: 24, color: favorito ? "red" : "gray" }}>
+              ♥
+            </Text>
           </TouchableOpacity>
 
           {/* Imagen circular */}
           <Image source={{ uri: producto.imagen_url }} style={styles.imagen} />
-
 
           {/* Nombre con línea debajo */}
           <View style={styles.nombreContainer}>
@@ -74,14 +109,20 @@ const ProductoModal = ({ visible, onClose, producto, onAgregar }) => {
           </View>
 
           <View style={styles.cantidad}>
-            <TouchableOpacity onPress={disminuir}><Text style={styles.btn}>-</Text></TouchableOpacity>
+            <TouchableOpacity onPress={disminuir}>
+              <Text style={styles.btn}>-</Text>
+            </TouchableOpacity>
             <Text>{cantidad}</Text>
-            <TouchableOpacity onPress={aumentar}><Text style={styles.btn}>+</Text></TouchableOpacity>
+            <TouchableOpacity onPress={aumentar}>
+              <Text style={styles.btn}>+</Text>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.botonAgregar} onPress={agregarProducto}>
-          <Text style={styles.botonTexto}>${producto.precio * cantidad}</Text>
-
+          <TouchableOpacity
+            style={styles.botonAgregar}
+            onPress={agregarProducto}
+          >
+            <Text style={styles.botonTexto}>${producto.precio * cantidad}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -94,31 +135,31 @@ export default ProductoModal;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: '#000000aa',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#000000aa",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modal: {
     width: 300,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 20,
     borderRadius: 20,
-    alignItems: 'center',
-    position: 'relative',
+    alignItems: "center",
+    position: "relative",
   },
   close: {
-    position: 'absolute',
+    position: "absolute",
     top: 10,
     right: 15,
     zIndex: 1,
   },
   closeText: {
     fontSize: 20,
-    color: 'red',
-    fontWeight: 'bold',
+    color: "red",
+    fontWeight: "bold",
   },
   heart: {
-    position: 'absolute',
+    position: "absolute",
     top: 10,
     left: 15,
     zIndex: 1,
@@ -130,51 +171,51 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   nombreContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
     marginBottom: 5,
   },
   nombre: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   linea: {
     width: 150,
     height: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
     marginTop: 5,
   },
   subtitulo: {
-    alignSelf: 'flex-start',
-    fontWeight: 'bold',
+    alignSelf: "flex-start",
+    fontWeight: "bold",
     marginTop: 10,
   },
   checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
     marginVertical: 3,
   },
   cantidad: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 15,
     gap: 10,
   },
   btn: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     paddingHorizontal: 10,
   },
   botonAgregar: {
-    backgroundColor: '#ff3d00',
+    backgroundColor: "#ff3d00",
     paddingVertical: 10,
     paddingHorizontal: 40,
     borderRadius: 20,
   },
   botonTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 16,
   },
 });

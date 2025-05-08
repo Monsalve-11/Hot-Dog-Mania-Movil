@@ -21,14 +21,13 @@ export default function LoginScreen({ navigation }) {
       return;
     }
 
-    Axios.post("http://192.168.101.5:3001/login", {
+    Axios.post("http://10.10.13.61:3001/login", {
       gmail: email,
       contrasena: password,
     })
       .then((response) => {
         console.log("Respuesta del servidor:", response.data);
         navigation.navigate("MainMenu");
-        // Asegúrate que tu backend retorne { success: true, message: "..."}
         if (response.data.success) {
           Alert.alert("Bienvenido", response.data.message || "Inicio exitoso");
           navigation.navigate("MainMenu");

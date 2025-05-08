@@ -13,6 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import BottomNav from "../components/barraInferior";
 import ProductoModal from "../components/ProductoModal";
 import CarritoModal from "../components/CarritoModal";
+import Categorias from "../components/Categorias"; // Importa el componente de categorías
 
 const categorias = ["Perros", "Bebidas", "Combos", "Promociones"];
 
@@ -29,7 +30,7 @@ export default function MainMenu() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    fetch("http://192.168.101.5:3001/productos")
+    fetch("http://10.10.13.61:3001/productos")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -104,7 +105,6 @@ export default function MainMenu() {
         </Animated.View>
       </View>
 
-
       {/* Mensaje temporal */}
       {mensajeVisible && (
         <View style={styles.toast}>
@@ -113,34 +113,15 @@ export default function MainMenu() {
         </View>
       )}
 
-
       {/* Pregunta */}
       <Text style={styles.question}>¿Qué hay para comer hoy?</Text>
 
-      {/* Categorías */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.tabScroll}
-      >
-        {categorias.map((cat) => (
-          <TouchableOpacity
-            key={cat}
-            onPress={() => setCategoriaSeleccionada(cat)}
-            style={styles.tabButton}
-            activeOpacity={0.6}
-          >
-            <Text
-              style={[
-                styles.tab,
-                categoriaSeleccionada === cat && styles.tabSelected,
-              ]}
-            >
-              {cat}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {/* Componente Categorías */}
+      <Categorias
+        categorias={categorias}
+        categoriaSeleccionada={categoriaSeleccionada}
+        setCategoriaSeleccionada={setCategoriaSeleccionada}
+      />
 
       {/* Productos */}
       <ScrollView
@@ -191,6 +172,7 @@ export default function MainMenu() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -207,49 +189,46 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: "#fff",
   },
-  
+
   logo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
   },
-  
+
   star: {
     fontSize: 18,
     color: "gold",
     marginHorizontal: 5,
   },
-  
+
   logoText: {
     fontSize: 18,
     fontWeight: "bold",
     color: "black",
   },
-  
+
   question: {
     fontSize: 16,
     marginTop: 20,
   },
-  input: {
-    backgroundColor: "#fff",
-    borderRadius: 30,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginTop: 10,
-  },
+
   tabScroll: {
     marginTop: 20,
     maxHeight: 40, // Limita altura para evitar zona de toque extra
   },
+
   tabButton: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 20,
   },
+
   tab: {
     fontSize: 14,
     color: "gray",
   },
+
   tabSelected: {
     color: "red",
     textDecorationLine: "underline",
@@ -262,14 +241,14 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 10,
     padding: 10,
     marginRight: 10,
     width: 160,
     height: 290, // más bajo para recortar verticalmente
-    justifyContent: 'space-between', // distribuye bien los elementos
-    shadowColor: '#000',
+    justifyContent: "space-between", // distribuye bien los elementos
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -281,44 +260,38 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 12,
   },
+
   productName: {
     fontWeight: "bold",
     fontSize: 14,
     marginTop: 8,
   },
+
   productDesc: {
     fontSize: 12,
     color: "gray",
   },
+
   productPrice: {
     fontSize: 14,
     color: "red",
     fontWeight: "bold",
     marginTop: 4,
   },
+
   buyButton: {
-    backgroundColor: 'red',
+    backgroundColor: "red",
     paddingVertical: 6,
     borderRadius: 20,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8, // controlado
   },
+
   buyButtonText: {
     color: "white",
     textAlign: "center",
   },
-  footer: {
-    position: "absolute",
-    bottom: 0,
-    height: 70,
-    width: "110%",
-    backgroundColor: "white",
-    borderTopWidth: 1,
-    borderTopColor: "#ddd",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-  },
+
   toast: {
     position: "absolute",
     top: 100,
@@ -335,6 +308,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     zIndex: 999,
   },
+
   toastText: {
     marginTop: 10,
     color: "#333",
@@ -353,11 +327,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   badgeText: {
     color: "#fff",
     fontSize: 12,
     fontWeight: "bold",
   },
 
-
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    height: 70,
+    width: "110%",
+    backgroundColor: "white",
+    borderTopWidth: 1,
+    borderTopColor: "#ddd",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+  },
 });
