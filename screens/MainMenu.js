@@ -30,7 +30,7 @@ export default function MainMenu() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    fetch("http://192.168.1.34:3001/productos")
+    fetch("http://192.168.1.6:3001/productos")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -245,9 +245,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginRight: 10,
-    width: 160,
-    height: 290, // más bajo para recortar verticalmente
-    justifyContent: "space-between", // distribuye bien los elementos
+    width: 180, // Ajuste de ancho
+    height: 320, // Ajuste de altura
+    justifyContent: "space-between", // Distribuye los elementos de manera uniforme
+    alignItems: "center", // Centra todos los elementos horizontalmente
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -257,26 +258,33 @@ const styles = StyleSheet.create({
 
   image: {
     width: "100%",
-    height: 100,
+    height: 120, // Ajuste de la altura de la imagen para que todas sean iguales
     borderRadius: 12,
   },
 
   productName: {
     fontWeight: "bold",
-    fontSize: 14,
-    marginTop: 8,
+    fontSize: 16,
+    marginTop: 10, // Espacio consistente entre la imagen y el nombre
+    textAlign: "center", // Alineación centrada
+    width: "100%", // Asegura que ocupe todo el espacio disponible
   },
 
   productDesc: {
     fontSize: 12,
     color: "gray",
+    textAlign: "center", // Alineación centrada
+    marginBottom: 8, // Espacio entre la descripción y el precio
+    width: "100%", // Asegura que ocupe todo el espacio disponible
   },
 
   productPrice: {
-    fontSize: 14,
+    fontSize: 16,
     color: "red",
     fontWeight: "bold",
-    marginTop: 4,
+    textAlign: "center", // Alineación centrada
+    marginTop: 8, // Espacio entre la descripción y el precio
+    width: "100%", // Asegura que ocupe todo el espacio disponible
   },
 
   buyButton: {
@@ -284,7 +292,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     alignItems: "center",
-    marginTop: 8, // controlado
+    marginTop: 8, // Espacio controlado
+    width: "100%", // Asegura que el botón ocupe todo el ancho de la tarjeta
   },
 
   buyButtonText: {

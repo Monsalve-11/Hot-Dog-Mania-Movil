@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -12,8 +12,8 @@ import {
 // Función para enviar el favorito a la base de datos
 const actualizarFavorito = async (userId, productId, esFavorito) => {
   const url = esFavorito
-    ? `http://192.168.1.34:3001/favoritos/agregar` // Cambiar la URL según tu API
-    : `http://192.168.1.34:3001/favoritos/eliminar`; // Cambiar la URL según tu API
+    ? `http://192.168.1.6:3001/favoritos/agregar` // Cambiar la URL según tu API
+    : `http://192.168.1.6:3001/favoritos/eliminar`; // Cambiar la URL según tu API
 
   const body = JSON.stringify({
     user_id: userId,
@@ -42,11 +42,35 @@ const actualizarFavorito = async (userId, productId, esFavorito) => {
   }
 };
 
+// Función para obtener el estado de favorito del producto
+const obtenerFavorito = async (productId) => {
+  try {
+    const response = await fetch(
+      `http://192.168.1.6:3001/productos/${productId}`
+    );
+    const data = await response.json();
+    return data.favorito === "si"; // Devuelve true si el producto es favorito
+  } catch (error) {
+    console.error("Error al obtener el estado de favorito", error);
+    return false;
+  }
+};
+
 const ProductoModal = ({ visible, onClose, producto, onAgregar, userId }) => {
   const [cantidad, setCantidad] = useState(1);
   const [sinSalsas, setSinSalsas] = useState(false);
   const [sinVegetales, setSinVegetales] = useState(false);
+  const [sinQueso, setSinQueso] = useState(false);
   const [favorito, setFavorito] = useState(false);
+
+  // Cargar el estado inicial del favorito
+  useEffect(() => {
+    const cargarFavorito = async () => {
+      const esFavorito = await obtenerFavorito(producto.id);
+      setFavorito(esFavorito);
+    };
+    cargarFavorito();
+  }, [producto]);
 
   const aumentar = () => {
     if (cantidad < producto.cantidad) setCantidad(cantidad + 1);
@@ -60,6 +84,7 @@ const ProductoModal = ({ visible, onClose, producto, onAgregar, userId }) => {
     const opciones = {
       sinSalsas,
       sinVegetales,
+      sinQueso,
       cantidad,
     };
     onAgregar(producto, opciones);
@@ -96,17 +121,30 @@ const ProductoModal = ({ visible, onClose, producto, onAgregar, userId }) => {
             <View style={styles.linea} />
           </View>
 
-          <Text style={styles.subtitulo}>SIN:</Text>
+          {/* Mostrar "SIN:" solo si el producto es de la categoría "Perros" */}
+          {producto.seccion === "Perros" && (
+            <>
+              <Text style={styles.subtitulo}>SIN:</Text>
 
-          <View style={styles.checkboxRow}>
-            <CheckBox value={sinSalsas} onValueChange={setSinSalsas} />
-            <Text>Salsas</Text>
-          </View>
+              <View style={styles.checkboxRow}>
+                <CheckBox value={sinSalsas} onValueChange={setSinSalsas} />
+                <Text>Salsas</Text>
+              </View>
 
-          <View style={styles.checkboxRow}>
-            <CheckBox value={sinVegetales} onValueChange={setSinVegetales} />
-            <Text>Vegetales</Text>
-          </View>
+              <View style={styles.checkboxRow}>
+                <CheckBox
+                  value={sinVegetales}
+                  onValueChange={setSinVegetales}
+                />
+                <Text>Vegetales</Text>
+              </View>
+
+              <View style={styles.checkboxRow}>
+                <CheckBox value={sinQueso} onValueChange={setSinQueso} />
+                <Text>Queso</Text>
+              </View>
+            </>
+          )}
 
           <View style={styles.cantidad}>
             <TouchableOpacity onPress={disminuir}>

@@ -10,7 +10,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:8081", // tu frontend en dev
-      "http://192.168.1.34:8081", // si accedes por IP
+      "http://192.168.1.6:8081", // si accedes por IP
     ],
     credentials: true,
   })
@@ -167,35 +167,80 @@ app.get("/productos", (req, res) => {
 
 // --- RUTAS PROTEGIDAS FAVORITOS ---
 
+// Agregar favorito
 app.post("/favoritos/agregar", requireLogin, (req, res) => {
   const user_id = req.session.userId;
   const { product_id } = req.body;
   if (!product_id) {
     return res.status(400).json({ message: "product_id es requerido" });
   }
-  const sql = "INSERT INTO favoritos (user_id, product_id) VALUES (?, ?)";
-  db.query(sql, [user_id, product_id], (err) => {
+
+  // Primero, actualizar el estado en la tabla productos
+  const updateFavorite = "UPDATE productos SET favorito = 'si' WHERE id = ?";
+  db.query(updateFavorite, [product_id], (err, result) => {
     if (err) {
-      console.error("❌ Error al agregar favorito:", err);
-      return res.status(500).json({ message: "Error al agregar favorito" });
+      console.error(
+        "❌ Error al actualizar el estado de favorito en productos:",
+        err
+      );
+      return res.status(500).json({
+        message: "Error al actualizar el favorito en la base de datos",
+      });
     }
-    res.json({ message: "Producto agregado a favoritos" });
+
+    // Verificar que se haya actualizado correctamente
+    console.log(
+      `Estado favorito actualizado a 'si' para producto con id: ${product_id}`
+    );
+
+    // Ahora, agregar a la tabla de favoritos
+    const sql = "INSERT INTO favoritos (user_id, product_id) VALUES (?, ?)";
+    db.query(sql, [user_id, product_id], (err) => {
+      if (err) {
+        console.error("❌ Error al agregar favorito:", err);
+        return res.status(500).json({ message: "Error al agregar favorito" });
+      }
+      res.json({ message: "Producto agregado a favoritos" });
+    });
   });
 });
 
+// Eliminar favorito
 app.post("/favoritos/eliminar", requireLogin, (req, res) => {
   const user_id = req.session.userId;
   const { product_id } = req.body;
   if (!product_id) {
     return res.status(400).json({ message: "product_id es requerido" });
   }
+
+  // Eliminar de la tabla favoritos
   const sql = "DELETE FROM favoritos WHERE user_id = ? AND product_id = ?";
   db.query(sql, [user_id, product_id], (err) => {
     if (err) {
       console.error("❌ Error al eliminar favorito:", err);
       return res.status(500).json({ message: "Error al eliminar favorito" });
     }
-    res.json({ message: "Producto eliminado de favoritos" });
+
+    // Ahora, actualizar el estado en la tabla productos
+    const updateFavorite = "UPDATE productos SET favorito = 'no' WHERE id = ?";
+    db.query(updateFavorite, [product_id], (err) => {
+      if (err) {
+        console.error(
+          "❌ Error al actualizar el estado de favorito en productos:",
+          err
+        );
+        return res.status(500).json({
+          message: "Error al actualizar el favorito en la base de datos",
+        });
+      }
+
+      // Verificar que se haya actualizado correctamente
+      console.log(
+        `Estado favorito actualizado a 'no' para producto con id: ${product_id}`
+      );
+
+      res.json({ message: "Producto eliminado de favoritos" });
+    });
   });
 });
 
@@ -213,6 +258,45 @@ app.get("/favoritos", requireLogin, (req, res) => {
       return res.status(500).json({ message: "Error al obtener favoritos" });
     }
     res.json(rows);
+  });
+});
+
+// Ruta para crear una factura
+app.post("/factura", requireLogin, (req, res) => {
+  const userId = req.session.userId; // Obtener el ID del usuario de la sesión
+  const { productos, total } = req.body;
+
+  // Insertar la factura
+  const sqlFactura = "INSERT INTO facturas (user_id, total) VALUES (?, ?)";
+  db.query(sqlFactura, [userId, total], (err, result) => {
+    if (err) {
+      console.error("❌ Error al registrar la factura:", err);
+      return res.status(500).json({ message: "Error al registrar la factura" });
+    }
+
+    const facturaId = result.insertId; // Obtener el ID de la factura recién insertada
+
+    // Insertar los detalles de la factura
+    const detallesFactura = productos.map((producto) => [
+      facturaId,
+      producto.id,
+      producto.cantidad,
+      producto.precio,
+    ]);
+
+    const sqlDetalle =
+      "INSERT INTO factura_detalle (factura_id, producto_id, cantidad, precio) VALUES ?";
+
+    db.query(sqlDetalle, [detallesFactura], (err) => {
+      if (err) {
+        console.error("❌ Error al registrar los detalles de la factura:", err);
+        return res
+          .status(500)
+          .json({ message: "Error al registrar los detalles de la factura" });
+      }
+
+      res.json({ message: "Factura registrada exitosamente" });
+    });
   });
 });
 

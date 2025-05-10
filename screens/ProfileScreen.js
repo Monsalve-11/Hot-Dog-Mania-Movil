@@ -8,7 +8,6 @@ import {
   Alert,
 } from "react-native";
 import axios from "axios";
-import CookieManager from "@react-native-cookies/cookies";
 import BottomNav from "../components/barraInferior";
 
 export default function ProfileScreen({ navigation }) {
@@ -19,7 +18,7 @@ export default function ProfileScreen({ navigation }) {
   useEffect(() => {
     // Hacemos la solicitud GET para obtener los datos del usuario
     axios
-      .get("http://192.168.1.34:3001/me", { withCredentials: true })
+      .get("http://192.168.1.6:3001/me", { withCredentials: true })
       .then((response) => {
         setUser(response.data); // Guardamos los datos del usuario en el estado
         console.log("Datos de usuario:", response.data);
@@ -29,14 +28,14 @@ export default function ProfileScreen({ navigation }) {
       });
 
     // Verificar las cookies
-    CookieManager.get("http://192.168.1.34:3001").then((cookies) => {
+    CookieManager.get("http://192.168.1.6:3001").then((cookies) => {
       console.log("Cookies disponibles:", cookies);
     });
   }, []); // Este useEffect se ejecuta solo una vez cuando la pantalla se monta
 
   const handleLogout = () => {
     axios
-      .post("http://192.168.1.34:3001/logout", {}, { withCredentials: true })
+      .post("http://192.168.1.6:3001/logout", {}, { withCredentials: true })
       .then(() => {
         navigation.replace("Login"); // Redirigir a la pantalla de login
       })
