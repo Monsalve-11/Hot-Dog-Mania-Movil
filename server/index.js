@@ -10,7 +10,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:8081", // tu frontend en dev
-      "http://192.168.1.6:8081", // si accedes por IP
+      "http://192.168.101.5:8081", // si accedes por IP
     ],
     credentials: true,
   })

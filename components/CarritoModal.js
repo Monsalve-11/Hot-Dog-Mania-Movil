@@ -59,7 +59,7 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
     // Obtener los datos del usuario al cargar el componente
     const obtenerUsuario = async () => {
       try {
-        const response = await fetch("http://192.168.1.6:3001/me", {
+        const response = await fetch("http://192.168.101.5:3001/me", {
           method: "GET",
           credentials: "include", // Asegúrate de enviar la cookie de la sesión
         });
@@ -84,55 +84,64 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
   // Función para eliminar producto
   const eliminarProducto = useCallback(
     (productoId) => {
+      console.log("Intentando eliminar el producto con ID:", productoId);
+      // Filtrar el carrito, sin modificar el estado original
       const nuevoCarrito = carrito.filter(
         (item) => item.producto.id !== productoId
       );
-      console.log(nuevoCarrito); // Verificar si el carrito se está actualizando correctamente
-      setCarrito(nuevoCarrito);
+      console.log("Carrito actualizado:", nuevoCarrito); // Verificar el carrito después de eliminar
+      setCarrito([...nuevoCarrito]); // Crear una nueva copia para asegurar la reactividad de React
     },
     [carrito, setCarrito]
   );
 
+
+
   // Función para procesar el pago
-  const procesarPago = async () => {
-    if (!userId) {
-      console.error("Usuario no autenticado");
-      return;
-    }
+ const procesarPago = async () => {
+  if (!userId) {
+    console.error("Usuario no autenticado");
+    return;
+  }
 
-    const datosFactura = {
-      userId: userId, // Aquí utilizamos el ID del usuario obtenido
-      productos: carrito.map((item) => ({
-        id: item.producto.id,
-        nombre: item.producto.nombre,
-        sin: item.opciones.sin,
-        cantidad: item.opciones.cantidad,
-        precio: item.producto.precio,
-      })),
-      total: total,
-    };
+  console.log("Mostrando opciones de pago"); // Agrega este log
 
-    try {
-      const response = await fetch("http://192.168.1.6:3001/factura", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(datosFactura),
-      });
-
-      if (response.ok) {
-        setPaymentModalVisible(true); // Abre el modal de pago si la factura se envió correctamente
-      } else {
-        console.error("Error al enviar la factura");
-      }
-    } catch (error) {
-      console.error("Error de red:", error);
-    }
+  const datosFactura = {
+    userId: userId,
+    productos: carrito.map((item) => ({
+      id: item.producto.id,
+      nombre: item.producto.nombre,
+      sin: item.opciones.sin,
+      cantidad: item.opciones.cantidad,
+      precio: item.producto.precio,
+    })),
+    total: total,
   };
 
+  try {
+    const response = await fetch("http://192.168.101.5:3001/factura", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(datosFactura),
+    });
+
+    if (response.ok) {
+      console.log("Factura enviada correctamente");
+      setPaymentModalVisible(true); // Abre el modal de pago
+    } else {
+      console.error("Error al enviar la factura");
+    }
+  } catch (error) {
+    console.error("Error de red:", error);
+  }
+};
+
+
   return (
-    <Modal transparent={true} visible={visible} animationType="fade">
+    <Modal transparent={false} visible={visible} animationType="fade">
+
       <View style={styles.overlay}>
         <View style={styles.modal}>
           <TouchableOpacity style={styles.close} onPress={onClose}>
@@ -196,10 +205,11 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
       </View>
 
       {/* Modal de opciones de pago */}
-      <PaymentOptionsModal
-        visible={paymentModalVisible}
-        onClose={() => setPaymentModalVisible(false)}
-      />
+     <PaymentOptionsModal
+  visible={paymentModalVisible}
+  onClose={() => setPaymentModalVisible(false)}
+/>
+
     </Modal>
   );
 };

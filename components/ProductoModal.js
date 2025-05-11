@@ -12,8 +12,8 @@ import {
 // Función para enviar el favorito a la base de datos
 const actualizarFavorito = async (userId, productId, esFavorito) => {
   const url = esFavorito
-    ? `http://192.168.1.6:3001/favoritos/agregar` // Cambiar la URL según tu API
-    : `http://192.168.1.6:3001/favoritos/eliminar`; // Cambiar la URL según tu API
+    ? `http://192.168.101.5:3001/favoritos/agregar` // Cambiar la URL según tu API
+    : `http://192.168.101.5:3001/favoritos/eliminar`; // Cambiar la URL según tu API
 
   const body = JSON.stringify({
     user_id: userId,
@@ -46,7 +46,7 @@ const actualizarFavorito = async (userId, productId, esFavorito) => {
 const obtenerFavorito = async (productId) => {
   try {
     const response = await fetch(
-      `http://192.168.1.6:3001/productos/${productId}`
+      `http://192.168.101.5:3001/productos/${productId}`
     );
     const data = await response.json();
     return data.favorito === "si"; // Devuelve true si el producto es favorito

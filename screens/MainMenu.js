@@ -30,7 +30,7 @@ export default function MainMenu() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    fetch("http://192.168.1.6:3001/productos")
+    fetch("http://192.168.101.5:3001/productos")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -166,7 +166,9 @@ export default function MainMenu() {
         visible={carritoVisible}
         onClose={() => setCarritoVisible(false)}
         carrito={carrito}
+        setCarrito={setCarrito}  // Asegúrate de pasar esta función
       />
+
 
       <BottomNav />
     </View>
