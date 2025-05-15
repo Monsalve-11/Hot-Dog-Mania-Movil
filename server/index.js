@@ -4,6 +4,7 @@ const mysql = require("mysql");
 const cors = require("cors");
 const session = require("express-session");
 const MySQLStore = require("express-mysql-session")(session);
+const Usuario = require("./models/Usuario");
 
 // 1. CORS
 app.use(
@@ -100,11 +101,15 @@ app.post("/login", (req, res) => {
     if (results.length === 0) {
       return res.status(401).json({ message: "Credenciales incorrectas" });
     }
+    // Crear objeto Usuario con los datos
+    const userObj = new Usuario(
+      results[0].id,
+      results[0].nombre,
+      results[0].gmail
+    );
 
-    // Usar let para variables que se pueden reasignar
-    let userId = (req.session.userId = results[0].id);
-    let nombre = (req.session.userName = results[0].nombre);
-    let gmail = (req.session.userEmail = results[0].gmail);
+    // Guardar la instancia en sesión (serializa solo los datos básicos, no métodos)
+    req.session.user = userObj;
 
     console.log("Usuario logueado:", req.session); // Verifica que el ID se guarde correctamente
 
@@ -122,25 +127,14 @@ app.post("/login", (req, res) => {
 
 // Ruta para obtener los datos del usuario
 app.get("/me", (req, res) => {
-  console.log("Cookies de la solicitud:", req.headers.cookie); // Verifica si la cookie está siendo enviada
+  // Puedes acceder a métodos del objeto Usuario aquí si lo necesitas
+  const usuario = req.session.user;
 
-  let userId = req.session.userId;
-  if (!userId) {
-    return res.status(401).json({ message: "No has iniciado sesión." });
-  }
-
-  const query = "SELECT id, nombre, gmail FROM usuarios WHERE id = ?";
-  db.query(query, [userId], (err, results) => {
-    if (err) {
-      return res
-        .status(500)
-        .json({ message: "Error al obtener los datos del usuario" });
-    }
-    if (results.length > 0) {
-      res.json(results[0]); // Responde con los datos del usuario
-    } else {
-      res.status(404).json({ message: "Usuario no encontrado" });
-    }
+  res.json({
+    id: usuario.id,
+    nombre: usuario.nombre,
+    gmail: usuario.gmail,
+    saludo: usuario.saludar ? usuario.saludar() : undefined,
   });
 });
 

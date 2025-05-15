@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Image,
   Animated,
+  ScrollView, // Importa ScrollView
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useNavigation } from "@react-navigation/native";
@@ -30,7 +30,7 @@ export default function MainMenu() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    fetch("http://192.168.101.5:3001/productos")
+    fetch("http://192.168.1.34:3001/productos")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -123,12 +123,8 @@ export default function MainMenu() {
         setCategoriaSeleccionada={setCategoriaSeleccionada}
       />
 
-      {/* Productos */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.cardScroll}
-      >
+      <ScrollView contentContainerStyle={styles.cardContainer}>
+        {/* Productos */}
         {productosFiltrados.map((prod) => (
           <View key={prod.id} style={styles.card}>
             <Image
@@ -166,9 +162,8 @@ export default function MainMenu() {
         visible={carritoVisible}
         onClose={() => setCarritoVisible(false)}
         carrito={carrito}
-        setCarrito={setCarrito}  // Asegúrate de pasar esta función
+        setCarrito={setCarrito}
       />
-
 
       <BottomNav />
     </View>
@@ -215,78 +210,62 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 
-  tabScroll: {
-    marginTop: 20,
-    maxHeight: 40, // Limita altura para evitar zona de toque extra
-  },
-
-  tabButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-
-  tab: {
-    fontSize: 14,
-    color: "gray",
-  },
-
-  tabSelected: {
-    color: "red",
-    textDecorationLine: "underline",
-    fontWeight: "bold",
-  },
-
-  cardScroll: {
+  cardContainer: {
     marginTop: 5,
     paddingBottom: 10,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
+    paddingEnd: 10,
   },
 
   card: {
     backgroundColor: "white",
     borderRadius: 10,
     padding: 10,
-    marginRight: 10,
-    width: 180, // Ajuste de ancho
-    height: 320, // Ajuste de altura
-    justifyContent: "space-between", // Distribuye los elementos de manera uniforme
-    alignItems: "center", // Centra todos los elementos horizontalmente
+    width: 180,
+    height: 320,
+    justifyContent: "space-between",
+    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    paddingTop: 20,
+    marginBottom: 10,
+    marginLeft: 10,
   },
 
   image: {
     width: "100%",
-    height: 120, // Ajuste de la altura de la imagen para que todas sean iguales
+    height: 120,
     borderRadius: 12,
   },
 
   productName: {
     fontWeight: "bold",
     fontSize: 16,
-    marginTop: 10, // Espacio consistente entre la imagen y el nombre
-    textAlign: "center", // Alineación centrada
-    width: "100%", // Asegura que ocupe todo el espacio disponible
+    marginTop: 10,
+    textAlign: "center",
+    width: "100%",
   },
 
   productDesc: {
     fontSize: 12,
     color: "gray",
-    textAlign: "center", // Alineación centrada
-    marginBottom: 8, // Espacio entre la descripción y el precio
-    width: "100%", // Asegura que ocupe todo el espacio disponible
+    textAlign: "center",
+    marginBottom: 8,
+    width: "100%",
   },
 
   productPrice: {
     fontSize: 16,
     color: "red",
     fontWeight: "bold",
-    textAlign: "center", // Alineación centrada
-    marginTop: 8, // Espacio entre la descripción y el precio
-    width: "100%", // Asegura que ocupe todo el espacio disponible
+    textAlign: "center",
+    marginTop: 8,
+    width: "100%",
   },
 
   buyButton: {
@@ -294,8 +273,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     alignItems: "center",
-    marginTop: 8, // Espacio controlado
-    width: "100%", // Asegura que el botón ocupe todo el ancho de la tarjeta
+    marginTop: 8,
+    width: "100%",
   },
 
   buyButtonText: {

@@ -1,0 +1,16 @@
+// models/Usuario.js
+class Usuario {
+  constructor(id, nombre, gmail) {
+    this.id = id;
+    this.nombre = nombre;
+    this.gmail = gmail;
+  }
+
+  saludar() {
+    return `Hola, ${this.nombre}`;
+  }
+
+  // Aquí puedes añadir más métodos para manejar al usuario
+}
+
+module.exports = Usuario;

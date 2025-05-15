@@ -81,7 +81,7 @@ export default function RegisterScreen({ navigation }) {
     }
 
     // Si pasa la validación, registrar
-    fetch("http://192.168.101.5:3001/register", {
+    fetch("http://192.168.1.34:3001/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -11,33 +11,30 @@ import axios from "axios";
 import BottomNav from "../components/barraInferior";
 
 export default function ProfileScreen({ navigation }) {
-  // Estado para almacenar los datos del usuario
-  const [user, setUser] = useState();
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Hacemos la solicitud GET para obtener los datos del usuario
     axios
-      .get("http://192.168.101.5:3001/me", { withCredentials: true })
+      .get("http://192.168.1.34:3001/me", { withCredentials: true })
       .then((response) => {
-        setUser(response.data); // Guardamos los datos del usuario en el estado
-        console.log("Datos de usuario:", response.data);
+        setUser(response.data);
+        setLoading(false);
       })
       .catch((error) => {
         console.error("Error al obtener los datos del usuario:", error);
+        if (error.response && error.response.status === 401) {
+          navigation.replace("Login");
+        }
+        setLoading(false);
       });
-
-    // Verificar las cookies
-    CookieManager.get("http://192.168.101.5:3001").then((cookies) => {
-      console.log("Cookies disponibles:", cookies);
-    });
-  }, []); // Este useEffect se ejecuta solo una vez cuando la pantalla se monta
+  }, []);
 
   const handleLogout = () => {
     axios
-      .post("http://192.168.101.5:3001/logout", {}, { withCredentials: true })
+      .post("http://192.168.1.34:3001/logout", {}, { withCredentials: true })
       .then(() => {
-        navigation.replace("Login"); // Redirigir a la pantalla de login
+        navigation.replace("Login");
       })
       .catch((err) => {
         console.error(err);
@@ -66,8 +63,7 @@ export default function ProfileScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.text}>Nombre: {user.nombre}</Text>
       <Text style={styles.text}>ID: {user.id}</Text>
-      <Text style={styles.text}>Email: {user.gmail}</Text>{" "}
-      {/* Mostrar el correo aquí */}
+      <Text style={styles.text}>Email: {user.gmail}</Text>
       <View style={styles.button}>
         <Button title="Cerrar sesión" onPress={handleLogout} />
       </View>
