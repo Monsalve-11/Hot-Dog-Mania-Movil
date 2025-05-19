@@ -30,7 +30,7 @@ export default function MainMenu() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    fetch("http://192.168.1.34:3001/productos")
+    fetch("http://192.168.1.33:3001/productos")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();

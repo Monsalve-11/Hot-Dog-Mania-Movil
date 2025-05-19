@@ -59,7 +59,7 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
     // Obtener los datos del usuario al cargar el componente
     const obtenerUsuario = async () => {
       try {
-        const response = await fetch("http://192.168.101.5:3001/me", {
+        const response = await fetch("http://192.168.1.33:3001/me", {
           method: "GET",
           credentials: "include", // Asegúrate de enviar la cookie de la sesión
         });
@@ -95,53 +95,49 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
     [carrito, setCarrito]
   );
 
-
-
   // Función para procesar el pago
- const procesarPago = async () => {
-  if (!userId) {
-    console.error("Usuario no autenticado");
-    return;
-  }
-
-  console.log("Mostrando opciones de pago"); // Agrega este log
-
-  const datosFactura = {
-    userId: userId,
-    productos: carrito.map((item) => ({
-      id: item.producto.id,
-      nombre: item.producto.nombre,
-      sin: item.opciones.sin,
-      cantidad: item.opciones.cantidad,
-      precio: item.producto.precio,
-    })),
-    total: total,
-  };
-
-  try {
-    const response = await fetch("http://192.168.101.5:3001/factura", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(datosFactura),
-    });
-
-    if (response.ok) {
-      console.log("Factura enviada correctamente");
-      setPaymentModalVisible(true); // Abre el modal de pago
-    } else {
-      console.error("Error al enviar la factura");
+  const procesarPago = async () => {
+    if (!userId) {
+      console.error("Usuario no autenticado");
+      return;
     }
-  } catch (error) {
-    console.error("Error de red:", error);
-  }
-};
 
+    console.log("Mostrando opciones de pago"); // Agrega este log
+
+    const datosFactura = {
+      userId: userId,
+      productos: carrito.map((item) => ({
+        id: item.producto.id,
+        nombre: item.producto.nombre,
+        sin: item.opciones.sin,
+        cantidad: item.opciones.cantidad,
+        precio: item.producto.precio,
+      })),
+      total: total,
+    };
+
+    try {
+      const response = await fetch("http://192.168.101.5:3001/factura", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(datosFactura),
+      });
+
+      if (response.ok) {
+        console.log("Factura enviada correctamente");
+        setPaymentModalVisible(true); // Abre el modal de pago
+      } else {
+        console.error("Error al enviar la factura");
+      }
+    } catch (error) {
+      console.error("Error de red:", error);
+    }
+  };
 
   return (
     <Modal transparent={false} visible={visible} animationType="fade">
-
       <View style={styles.overlay}>
         <View style={styles.modal}>
           <TouchableOpacity style={styles.close} onPress={onClose}>
@@ -205,11 +201,10 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
       </View>
 
       {/* Modal de opciones de pago */}
-     <PaymentOptionsModal
-  visible={paymentModalVisible}
-  onClose={() => setPaymentModalVisible(false)}
-/>
-
+      <PaymentOptionsModal
+        visible={paymentModalVisible}
+        onClose={() => setPaymentModalVisible(false)}
+      />
     </Modal>
   );
 };
@@ -227,7 +222,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 20,
     padding: 25,
-    width: 380, // Aumento el ancho de la tarjeta para más espacio
+    width: 380,
     alignItems: "center",
   },
   close: {

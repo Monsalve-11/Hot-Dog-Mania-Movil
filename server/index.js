@@ -3,23 +3,19 @@ const app = express();
 const mysql = require("mysql");
 const cors = require("cors");
 const session = require("express-session");
-const MySQLStore = require("express-mysql-session")(session);
 const Usuario = require("./models/Usuario");
 
-// 1. CORS
 app.use(
   cors({
-    origin: [
-      "http://localhost:8081", // tu frontend en dev
-      "http://192.168.101.5:8081", // si accedes por IP
-    ],
+    origin: ["http://localhost:8081", "http://192.168.1.33:8081"],
     credentials: true,
   })
 );
-// 2. JSON parser
+
+// JSON parser
 app.use(express.json());
 
-// 3. Conexión a MySQL
+// Conexión a MySQL
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -34,36 +30,21 @@ db.connect((err) => {
   }
 });
 
-let userId;
-let nombre;
-let gmail;
-// 4. Store de sesiones en MySQL
-const sessionStore = new MySQLStore(
-  {
-    expiration: 86400000, // Tiempo de expiración de la sesión en milisegundos (1 día)
-    checkExpirationInterval: 900000, // Intervalo de tiempo para limpiar sesiones expiradas (15 minutos)
-    clearExpired: true, // Limpiar sesiones expiradas
-  },
-  db // Usar la conexión a la base de datos MySQL
-);
-
-// 5. Middleware de sesión
+// Middleware de sesión sin MySQLStore (usa almacenamiento en memoria)
 app.use(
   session({
     key: "session_id",
-    secret: "tu_secreto_super_seguro", // cámbialo en producción
-    store: sessionStore,
+    secret: "tu_secreto_super_seguro",
     resave: false,
     saveUninitialized: false,
     cookie: {
       maxAge: 86400000, // 1 día
       httpOnly: true,
-      secure: false, // true si usas HTTPS
+      secure: false,
       sameSite: "lax",
     },
   })
 );
-
 // Middleware para proteger rutas
 function requireLogin(req, res, next) {
   if (!req.session.userId) {
@@ -291,6 +272,36 @@ app.post("/factura", requireLogin, (req, res) => {
 
       res.json({ message: "Factura registrada exitosamente" });
     });
+  });
+});
+
+app.get("/misfacturas", (req, res) => {
+  const user = req.session.user;
+
+  if (!user) {
+    return res.status(401).json({ message: "Debes iniciar sesión" });
+  }
+
+  const userId = 6;
+  console.log("Usuario consultando facturas, userId:", userId);
+
+  const sql = `
+    SELECT f.id, f.fecha_emision, f.total, f.estado,
+           GROUP_CONCAT(CONCAT(fd.cantidad, ' x ', p.nombre) SEPARATOR ', ') AS detalles
+    FROM facturas f
+    LEFT JOIN factura_detalle fd ON f.id = fd.factura_id
+    LEFT JOIN productos p ON fd.producto_id = p.id
+    WHERE f.user_id = ?
+    GROUP BY f.id
+    ORDER BY f.fecha_emision DESC
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error("Error al obtener facturas:", err);
+      return res.status(500).json({ message: "Error al obtener facturas" });
+    }
+    res.json(results);
   });
 });
 

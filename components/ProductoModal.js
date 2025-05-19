@@ -6,14 +6,13 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  CheckBox,
 } from "react-native";
 
 // Función para enviar el favorito a la base de datos
 const actualizarFavorito = async (userId, productId, esFavorito) => {
   const url = esFavorito
-    ? `http://192.168.101.5:3001/favoritos/agregar` // Cambiar la URL según tu API
-    : `http://192.168.101.5:3001/favoritos/eliminar`; // Cambiar la URL según tu API
+    ? `http://192.168.1.33:3001/favoritos/agregar` // Cambiar la URL según tu API
+    : `http://192.168.1.33:3001/favoritos/eliminar`; // Cambiar la URL según tu API
 
   const body = JSON.stringify({
     user_id: userId,

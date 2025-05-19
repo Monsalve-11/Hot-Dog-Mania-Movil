@@ -16,7 +16,7 @@ export default function ProfileScreen({ navigation }) {
 
   useEffect(() => {
     axios
-      .get("http://192.168.1.34:3001/me", { withCredentials: true })
+      .get("http://192.168.1.33:3001/me")
       .then((response) => {
         setUser(response.data);
         setLoading(false);
@@ -32,7 +32,7 @@ export default function ProfileScreen({ navigation }) {
 
   const handleLogout = () => {
     axios
-      .post("http://192.168.1.34:3001/logout", {}, { withCredentials: true })
+      .post("http://192.168.1.33:3001/logout")
       .then(() => {
         navigation.replace("Login");
       })
