@@ -6,14 +6,14 @@ import {
   StyleSheet,
   Image,
   Animated,
-  ScrollView, // Importa ScrollView
+  ScrollView,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useNavigation } from "@react-navigation/native";
 import BottomNav from "../components/barraInferior";
 import ProductoModal from "../components/ProductoModal";
 import CarritoModal from "../components/CarritoModal";
-import Categorias from "../components/Categorias"; // Importa el componente de categorías
+import Categorias from "../components/Categorias";
 
 const categorias = ["Perros", "Bebidas", "Combos", "Promociones"];
 
@@ -30,7 +30,7 @@ export default function MainMenu() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    fetch("http://192.168.1.33:3001/productos")
+    fetch("http://192.168.1.6:3001/productos")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -123,8 +123,11 @@ export default function MainMenu() {
         setCategoriaSeleccionada={setCategoriaSeleccionada}
       />
 
-      <ScrollView contentContainerStyle={styles.cardContainer}>
-        {/* Productos */}
+      <ScrollView
+        horizontal={true}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.cardContainer}
+      >
         {productosFiltrados.map((prod) => (
           <View key={prod.id} style={styles.card}>
             <Image
@@ -141,7 +144,7 @@ export default function MainMenu() {
               style={styles.buyButton}
               onPress={() => abrirModal(prod)}
             >
-              <Text style={styles.buyButtonText}>Comprar</Text>
+              <Text style={styles.buyButtonText}>COMPRAR</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -185,6 +188,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     backgroundColor: "#fff",
+    marginTop: 30,
   },
 
   logo: {
@@ -214,72 +218,75 @@ const styles = StyleSheet.create({
     marginTop: 5,
     paddingBottom: 10,
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "flex-start",
     paddingEnd: 10,
   },
 
   card: {
     backgroundColor: "white",
-    borderRadius: 10,
+    borderRadius: 40,
     padding: 10,
-    width: 180,
-    height: 320,
+    width: 320,
+    height: 550,
     justifyContent: "space-between",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.5,
     shadowRadius: 3,
-    elevation: 3,
-    paddingTop: 20,
+    elevation: 10,
+    paddingTop: 10,
     marginBottom: 10,
-    marginLeft: 10,
+    marginRight: 15,
+    marginLeft: 15,
   },
 
   image: {
     width: "100%",
-    height: 120,
-    borderRadius: 12,
+    height: 280,
+    borderRadius: 140,
   },
 
   productName: {
     fontWeight: "bold",
-    fontSize: 16,
-    marginTop: 10,
+    fontSize: 30,
+    marginTop: 0,
     textAlign: "center",
     width: "100%",
   },
 
   productDesc: {
-    fontSize: 12,
+    fontSize: 15,
     color: "gray",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 30,
     width: "100%",
   },
 
   productPrice: {
-    fontSize: 16,
+    fontSize: 30,
     color: "red",
     fontWeight: "bold",
     textAlign: "center",
-    marginTop: 8,
+    marginTop: 0,
     width: "100%",
   },
 
   buyButton: {
     backgroundColor: "red",
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingVertical: 10,
+    borderRadius: 30,
     alignItems: "center",
-    marginTop: 8,
-    width: "100%",
+    marginTop: 10,
+    width: "80%",
+    shadowColor: "red",
   },
 
   buyButtonText: {
     color: "white",
+    fontSize: 25,
     textAlign: "center",
+    shadowColor: "red",
   },
 
   toast: {
@@ -335,5 +342,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
+  },
+
+  question: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginTop: 20,
   },
 });

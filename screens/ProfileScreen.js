@@ -6,6 +6,7 @@ import {
   Button,
   ActivityIndicator,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import axios from "axios";
 import BottomNav from "../components/barraInferior";
@@ -16,7 +17,7 @@ export default function ProfileScreen({ navigation }) {
 
   useEffect(() => {
     axios
-      .get("http://192.168.1.33:3001/me")
+      .get("http://192.168.1.6:3001/me")
       .then((response) => {
         setUser(response.data);
         setLoading(false);
@@ -32,7 +33,7 @@ export default function ProfileScreen({ navigation }) {
 
   const handleLogout = () => {
     axios
-      .post("http://192.168.1.33:3001/logout")
+      .post("http://192.168.1.6:3001/logout")
       .then(() => {
         navigation.replace("Login");
       })
@@ -44,7 +45,12 @@ export default function ProfileScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
         <ActivityIndicator size="large" />
       </View>
     );
@@ -53,6 +59,15 @@ export default function ProfileScreen({ navigation }) {
   if (!user) {
     return (
       <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.logo}>
+            <Text style={styles.star}>★</Text>
+            <Text style={styles.logoText}>HOT DOG MANIA</Text>
+            <Text style={styles.star}>★</Text>
+          </View>
+        </View>
+
         <Text style={styles.text}>No hay datos de usuario</Text>
         <BottomNav />
       </View>
@@ -61,19 +76,110 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Nombre: {user.nombre}</Text>
-      <Text style={styles.text}>ID: {user.id}</Text>
-      <Text style={styles.text}>Email: {user.gmail}</Text>
-      <View style={styles.button}>
-        <Button title="Cerrar sesión" onPress={handleLogout} />
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.logo}>
+          <Text style={styles.star}>★</Text>
+          <Text style={styles.logoText}>HOT DOG MANIA</Text>
+          <Text style={styles.star}>★</Text>
+        </View>
       </View>
+
+      <Text style={styles.title}>PERFIL</Text>
+      <View style={styles.separator} />
+
+      <View style={styles.card}>
+        <Text style={styles.text}>Nombre: {user.nombre}</Text>
+        <Text style={styles.text}>Email: {user.gmail}</Text>
+      </View>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
+      </TouchableOpacity>
+
       <BottomNav />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  text: { fontSize: 18, marginVertical: 4 },
-  button: { marginTop: 20, width: "60%" },
+  container: {
+    flex: 1,
+    backgroundColor: "#ddd",
+    paddingTop: 40,
+    paddingHorizontal: 15,
+    justifyContent: "flex-start",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  logo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  logoText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "black",
+    marginHorizontal: 4,
+  },
+  star: {
+    fontSize: 60,
+    color: "black",
+  },
+
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    marginBottom: 30,
+    // sombra para Android
+    elevation: 4,
+    // sombra para iOS
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  separator: {
+    height: 2,
+    backgroundColor: "#000",
+    marginVertical: 15,
+    width: "60%",
+    alignSelf: "center",
+  },
+
+  text: {
+    fontSize: 16,
+    marginVertical: 6,
+    color: "#333",
+  },
+
+  logoutButton: {
+    backgroundColor: "#d32f2f",
+    borderRadius: 25,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    alignItems: "center",
+    alignSelf: "center",
+    position: "absolute",
+    bottom: 430,
+    width: "90%",
+  },
+
+  logoutButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
 });

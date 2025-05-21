@@ -7,7 +7,7 @@ const Usuario = require("./models/Usuario");
 
 app.use(
   cors({
-    origin: ["http://localhost:8081", "http://192.168.1.33:8081"],
+    origin: ["http://localhost:8081", "http://192.168.1.6:8081"],
     credentials: true,
   })
 );
@@ -282,26 +282,59 @@ app.get("/misfacturas", (req, res) => {
     return res.status(401).json({ message: "Debes iniciar sesión" });
   }
 
-  const userId = 6;
+  const userId = user.id;
   console.log("Usuario consultando facturas, userId:", userId);
 
-  const sql = `
-    SELECT f.id, f.fecha_emision, f.total, f.estado,
-           GROUP_CONCAT(CONCAT(fd.cantidad, ' x ', p.nombre) SEPARATOR ', ') AS detalles
-    FROM facturas f
-    LEFT JOIN factura_detalle fd ON f.id = fd.factura_id
-    LEFT JOIN productos p ON fd.producto_id = p.id
-    WHERE f.user_id = ?
-    GROUP BY f.id
-    ORDER BY f.fecha_emision DESC
+  const sqlFacturas = `
+    SELECT id, fecha_emision, total, estado
+    FROM facturas
+    WHERE user_id = ?
+    ORDER BY fecha_emision DESC
   `;
 
-  db.query(sql, [userId], (err, results) => {
+  db.query(sqlFacturas, [userId], (err, facturas) => {
     if (err) {
       console.error("Error al obtener facturas:", err);
       return res.status(500).json({ message: "Error al obtener facturas" });
     }
-    res.json(results);
+
+    if (facturas.length === 0) return res.json([]);
+
+    const facturaIds = facturas.map((f) => f.id);
+
+    // Armar placeholders para IN (?, ?, ?...)
+    const placeholders = facturaIds.map(() => "?").join(",");
+
+    const sqlDetalles = `
+      SELECT fd.factura_id, fd.cantidad, fd.precio, p.nombre
+      FROM factura_detalle fd
+      JOIN productos p ON fd.producto_id = p.id
+      WHERE fd.factura_id IN (${placeholders})
+    `;
+
+    db.query(sqlDetalles, facturaIds, (err2, detalles) => {
+      if (err2) {
+        console.error("Error al obtener detalles:", err2);
+        return res.status(500).json({ message: "Error al obtener detalles" });
+      }
+
+      const detallesPorFactura = detalles.reduce((acc, detalle) => {
+        if (!acc[detalle.factura_id]) acc[detalle.factura_id] = [];
+        acc[detalle.factura_id].push({
+          nombre: detalle.nombre,
+          cantidad: detalle.cantidad,
+          precio: detalle.precio,
+        });
+        return acc;
+      }, {});
+
+      const facturasConDetalles = facturas.map((factura) => ({
+        ...factura,
+        detalles: detallesPorFactura[factura.id] || [],
+      }));
+
+      res.json(facturasConDetalles);
+    });
   });
 });
 

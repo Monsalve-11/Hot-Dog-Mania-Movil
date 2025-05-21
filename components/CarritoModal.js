@@ -59,7 +59,7 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
     // Obtener los datos del usuario al cargar el componente
     const obtenerUsuario = async () => {
       try {
-        const response = await fetch("http://192.168.1.33:3001/me", {
+        const response = await fetch("http://192.168.1.6:3001/me", {
           method: "GET",
           credentials: "include", // Asegúrate de enviar la cookie de la sesión
         });
@@ -117,7 +117,7 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
     };
 
     try {
-      const response = await fetch("http://192.168.101.5:3001/factura", {
+      const response = await fetch("http://192.168.1.6:3001/factura", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
