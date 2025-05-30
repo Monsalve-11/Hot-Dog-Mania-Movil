@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 
 const BottomNav = () => {
   const navigation = useNavigation();
-  const [active, setActive] = useState(null); // Ya no lo usamos para color porque todos son rojos
+  const [active, setActive] = useState(null);
 
   const handlePress = (screen) => {
     setActive(screen);
