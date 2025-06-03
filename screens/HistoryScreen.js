@@ -9,6 +9,9 @@ import {
 import axios from "axios";
 import BottomNav from "../components/barraInferior";
 
+// Importa LinearGradient para Expo
+import { LinearGradient } from "expo-linear-gradient";
+
 export default function HistoryScreen({ navigation }) {
   const [facturas, setFacturas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +20,7 @@ export default function HistoryScreen({ navigation }) {
   // Obtener usuario actual
   useEffect(() => {
     axios
-      .get("http://192.168.1.6:3001/me")
+      .get("http://192.168.1.34:3001/me")
       .then((res) => {
         setUser(res.data);
       })
@@ -31,7 +34,7 @@ export default function HistoryScreen({ navigation }) {
     if (!user) return;
 
     axios
-      .get("http://192.168.1.6:3001/misfacturas", {
+      .get("http://192.168.1.34:3001/misfacturas", {
         params: { userId: user.id },
       })
       .then((response) => {
@@ -56,15 +59,17 @@ export default function HistoryScreen({ navigation }) {
 
   if (facturas.length === 0) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <Text>No tienes facturas.</Text>
+      <LinearGradient colors={["#ffffff", "#f04720"]} style={styles.container}>
+        <View style={styles.center}>
+          <Text>No tienes facturas.</Text>
+        </View>
         <BottomNav />
-      </View>
+      </LinearGradient>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={["#ffffff", "#f04720"]} style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.logo}>
@@ -86,10 +91,23 @@ export default function HistoryScreen({ navigation }) {
               FECHA: {new Date(item.fecha_emision).toLocaleDateString()}
             </Text>
 
-            <Text style={styles.subTitle}>Producto:</Text>
+            <Text style={styles.subTitle}>Productos:</Text>
 
-            {/* Mostramos detalles como texto plano */}
-            <Text style={styles.detallesText}>{item.detalles}</Text>
+            {item.detalles && item.detalles.length > 0 ? (
+              item.detalles.map((producto, index) => (
+                <View key={index} style={styles.productRow}>
+                  <Text style={styles.cantidad}>{producto.cantidad}x</Text>
+                  <Text style={styles.bulletPoint}>{producto.nombre}</Text>
+                  <Text style={styles.precio}>
+                    ${producto.precio.toLocaleString()}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.detallesText}>
+                No hay detalles disponibles.
+              </Text>
+            )}
 
             <View style={styles.totalRow}>
               <Text style={styles.totalText}>TOTAL</Text>
@@ -102,14 +120,13 @@ export default function HistoryScreen({ navigation }) {
       />
 
       <BottomNav />
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ddd",
     paddingTop: 40,
     paddingHorizontal: 15,
     justifyContent: "flex-start",

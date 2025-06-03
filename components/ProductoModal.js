@@ -8,14 +8,25 @@ import {
   StyleSheet,
 } from "react-native";
 
+// Componente Checkbox simple personalizado
+const MyCheckbox = ({ value, onValueChange }) => {
+  return (
+    <TouchableOpacity
+      style={[styles.checkboxBase, value && styles.checkboxChecked]}
+      onPress={() => onValueChange(!value)}
+    >
+      {value && <Text style={styles.checkboxTick}>✓</Text>}
+    </TouchableOpacity>
+  );
+};
+
 // Función para enviar el favorito a la base de datos
 const actualizarFavorito = async (userId, productId, esFavorito) => {
   const url = esFavorito
-    ? `http://192.168.1.6:3001/favoritos/agregar` // Cambiar la URL según tu API
-    : `http://192.168.1.6:3001/favoritos/eliminar`; // Cambiar la URL según tu API
+    ? `http://192.168.1.34:3001/favoritos/agregar`
+    : `http://192.168.1.34:3001/favoritos/eliminar`;
 
   const body = JSON.stringify({
-    user_id: userId,
     product_id: productId,
   });
 
@@ -28,10 +39,14 @@ const actualizarFavorito = async (userId, productId, esFavorito) => {
       method: "POST",
       headers,
       body,
+      credentials: "include",
     });
 
     if (!response.ok) {
-      throw new Error("Error al actualizar el favorito");
+      const text = await response.text();
+      throw new Error(
+        `Error al actualizar el favorito: ${response.status} - ${text}`
+      );
     }
     console.log(
       `Producto ${esFavorito ? "agregado" : "eliminado"} de favoritos.`
@@ -41,35 +56,31 @@ const actualizarFavorito = async (userId, productId, esFavorito) => {
   }
 };
 
-// Función para obtener el estado de favorito del producto
-const obtenerFavorito = async (productId) => {
-  try {
-    const response = await fetch(
-      `http://192.168.1.6:3001/productos/${productId}`
-    );
-    const data = await response.json();
-    return data.favorito === "si"; // Devuelve true si el producto es favorito
-  } catch (error) {
-    console.error("Error al obtener el estado de favorito", error);
-    return false;
-  }
-};
-
-const ProductoModal = ({ visible, onClose, producto, onAgregar, userId }) => {
+const ProductoModal = ({
+  visible,
+  onClose,
+  producto,
+  onAgregar,
+  userId,
+  favoritosIds = [],
+  actualizarFavoritoDesdeMain,
+}) => {
   const [cantidad, setCantidad] = useState(1);
   const [sinSalsas, setSinSalsas] = useState(false);
   const [sinVegetales, setSinVegetales] = useState(false);
   const [sinQueso, setSinQueso] = useState(false);
   const [favorito, setFavorito] = useState(false);
 
-  // Cargar el estado inicial del favorito
+  // Estado para mostrar mensaje toast (texto dinámico)
+  const [mensajeFavorito, setMensajeFavorito] = useState("");
+  const [mensajeVisible, setMensajeVisible] = useState(false);
+
+  // Sincroniza estado favorito con la lista que viene desde MainMenu
   useEffect(() => {
-    const cargarFavorito = async () => {
-      const esFavorito = await obtenerFavorito(producto.id);
-      setFavorito(esFavorito);
-    };
-    cargarFavorito();
-  }, [producto]);
+    if (producto) {
+      setFavorito(favoritosIds.includes(producto.id));
+    }
+  }, [producto, favoritosIds]);
 
   const aumentar = () => {
     if (cantidad < producto.cantidad) setCantidad(cantidad + 1);
@@ -91,9 +102,32 @@ const ProductoModal = ({ visible, onClose, producto, onAgregar, userId }) => {
   };
 
   const handleFavorito = async () => {
-    setFavorito(!favorito); // Cambiar el estado del corazón
-    await actualizarFavorito(userId, producto.id, !favorito); // Llamada para agregar o eliminar
+    const nuevoEstado = !favorito;
+    setFavorito(nuevoEstado);
+
+    // Llamar backend
+    await actualizarFavorito(userId, producto.id, nuevoEstado);
+
+    // Actualizar estado en MainMenu si existe función
+    if (actualizarFavoritoDesdeMain) {
+      actualizarFavoritoDesdeMain(producto.id, nuevoEstado);
+    }
+
+    // Mostrar mensaje dinámico
+    setMensajeFavorito(
+      nuevoEstado
+        ? "Producto agregado a Favoritos"
+        : "Producto eliminado de Favoritos"
+    );
+    setMensajeVisible(true);
+
+    // Ocultar mensaje luego de 3 segundos
+    setTimeout(() => {
+      setMensajeVisible(false);
+    }, 3000);
   };
+
+  if (!producto) return null;
 
   return (
     <Modal transparent={true} visible={visible} animationType="fade">
@@ -106,13 +140,17 @@ const ProductoModal = ({ visible, onClose, producto, onAgregar, userId }) => {
 
           {/* Botón corazón */}
           <TouchableOpacity style={styles.heart} onPress={handleFavorito}>
-            <Text style={{ fontSize: 24, color: favorito ? "red" : "gray" }}>
+            <Text style={{ fontSize: 30, color: favorito ? "red" : "gray" }}>
               ♥
             </Text>
           </TouchableOpacity>
 
           {/* Imagen circular */}
-          <Image source={{ uri: producto.imagen_url }} style={styles.imagen} />
+          <Image
+            source={{ uri: producto.imagen_url }}
+            style={styles.imagen}
+            resizeMode="contain"
+          />
 
           {/* Nombre con línea debajo */}
           <View style={styles.nombreContainer}>
@@ -126,12 +164,12 @@ const ProductoModal = ({ visible, onClose, producto, onAgregar, userId }) => {
               <Text style={styles.subtitulo}>SIN:</Text>
 
               <View style={styles.checkboxRow}>
-                <CheckBox value={sinSalsas} onValueChange={setSinSalsas} />
+                <MyCheckbox value={sinSalsas} onValueChange={setSinSalsas} />
                 <Text>Salsas</Text>
               </View>
 
               <View style={styles.checkboxRow}>
-                <CheckBox
+                <MyCheckbox
                   value={sinVegetales}
                   onValueChange={setSinVegetales}
                 />
@@ -139,7 +177,7 @@ const ProductoModal = ({ visible, onClose, producto, onAgregar, userId }) => {
               </View>
 
               <View style={styles.checkboxRow}>
-                <CheckBox value={sinQueso} onValueChange={setSinQueso} />
+                <MyCheckbox value={sinQueso} onValueChange={setSinQueso} />
                 <Text>Queso</Text>
               </View>
             </>
@@ -161,6 +199,13 @@ const ProductoModal = ({ visible, onClose, producto, onAgregar, userId }) => {
           >
             <Text style={styles.botonTexto}>${producto.precio * cantidad}</Text>
           </TouchableOpacity>
+
+          {/* Mensaje toast para favoritos */}
+          {mensajeVisible && (
+            <View style={styles.toastFavorito}>
+              <Text style={styles.toastText}>{mensajeFavorito}</Text>
+            </View>
+          )}
         </View>
       </View>
     </Modal>
@@ -177,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modal: {
-    width: 300,
+    width: 320,
     backgroundColor: "white",
     padding: 20,
     borderRadius: 20,
@@ -202,19 +247,21 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   imagen: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
     marginTop: 10,
   },
   nombreContainer: {
     alignItems: "center",
     marginTop: 10,
     marginBottom: 5,
+    paddingHorizontal: 10,
   },
   nombre: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "bold",
+    textAlign: "center",
   },
   linea: {
     width: 150,
@@ -249,10 +296,54 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 40,
     borderRadius: 20,
+    marginTop: 5,
+    minWidth: 120,
   },
   botonTexto: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 18,
+    textAlign: "center",
+  },
+
+  checkboxBase: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "gray",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  checkboxChecked: {
+    backgroundColor: "red",
+    borderColor: "red",
+  },
+  checkboxTick: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
+
+  toastFavorito: {
+    position: "absolute",
+    top: 60,
+    alignSelf: "center",
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 10,
+    zIndex: 10,
+  },
+
+  toastText: {
     fontSize: 16,
+    color: "#333",
   },
 });

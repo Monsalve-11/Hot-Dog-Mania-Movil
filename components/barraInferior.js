@@ -15,19 +15,35 @@ const BottomNav = () => {
   return (
     <View style={styles.footer}>
       <TouchableOpacity onPress={() => handlePress("MainMenu")}>
-        <Icon name="home" size={30} color="red" />
+        <Icon
+          name="home"
+          size={30}
+          color={active === "MainMenu" ? "#ff3b30" : "#ffffff"}
+        />
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => handlePress("FavoritesScreen")}>
-        <Icon name="heart" size={30} color="red" />
+        <Icon
+          name="heart"
+          size={30}
+          color={active === "FavoritesScreen" ? "#ff3b30" : "#ffffff"}
+        />
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => handlePress("HistoryScreen")}>
-        <Icon name="clock-o" size={30} color="red" />
+        <Icon
+          name="clock-o"
+          size={30}
+          color={active === "HistoryScreen" ? "#ff3b30" : "#ffffff"}
+        />
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => handlePress("ProfileScreen")}>
-        <Icon name="user" size={30} color="red" />
+        <Icon
+          name="user"
+          size={30}
+          color={active === "ProfileScreen" ? "#ff3b30" : "#ffffff"}
+        />
       </TouchableOpacity>
     </View>
   );

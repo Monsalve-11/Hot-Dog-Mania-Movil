@@ -7,6 +7,10 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -80,8 +84,7 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    // Si pasa la validación, registrar
-    fetch("http://192.168.1.6:3001/register", {
+    fetch("http://192.168.1.34:3001/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -107,81 +110,97 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <LinearGradient colors={["#1a1a1a", "#2d2d2d"]} style={styles.container}>
+      {/* Fondo fijo */}
       <Image
         source={require("../assets/fondo.png")}
         style={styles.backgroundImage}
       />
-      <View style={styles.contentContainer}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.star}>★</Text>
-          <Text style={styles.title}>HOT DOG</Text>
-          <Text style={styles.star}>★</Text>
-        </View>
-        <Text style={styles.subtitle}>MANIA</Text>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.welcomeText}>Crear una cuenta</Text>
+      {/* Al tocar fuera del formulario, cerrar teclado */}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.contentContainer}>
+          {/* Título “HOT DOG MANIA” */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.star}>★</Text>
+            <Text style={styles.title}>HOT DOG</Text>
+            <Text style={styles.star}>★</Text>
+          </View>
+          <Text style={styles.subtitle}>MANIA</Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Nombre y apellido"
-            placeholderTextColor="#666"
-            value={name}
-            onChangeText={validateName}
-            autoCapitalize="words"
-          />
-          {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Correo electrónico"
-            placeholderTextColor="#666"
-            value={email}
-            onChangeText={validateEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          {emailError ? (
-            <Text style={styles.errorText}>{emailError}</Text>
-          ) : null}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Contraseña"
-            placeholderTextColor="#666"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Confirmar contraseña"
-            placeholderTextColor="#666"
-            value={confirmPassword}
-            onChangeText={validateConfirmPassword}
-            secureTextEntry
-          />
-          {confirmPasswordError ? (
-            <Text style={styles.errorText}>{confirmPasswordError}</Text>
-          ) : null}
-
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={handleRegister}
+          {/* Solo el bloque del formulario se eleva con el teclado */}
+          <KeyboardAvoidingView
+            style={styles.keyboardAvoid}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            // Aumentamos offset para que suba aún más y no choque con el margen inferior
+            keyboardVerticalOffset={Platform.OS === "ios" ? 140 : 160}
           >
-            <Text style={styles.registerButtonText}>REGISTRARSE</Text>
-          </TouchableOpacity>
+            <View style={[styles.formContainer, { marginBottom: 10 }]}>
+              <Text style={styles.welcomeText}>Crear una cuenta</Text>
 
-          <TouchableOpacity
-            style={styles.loginContainer}
-            onPress={() => navigation.navigate("Login")}
-          >
-            <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
-            <Text style={styles.loginLink}>Iniciar Sesión</Text>
-          </TouchableOpacity>
+              <TextInput
+                style={styles.input}
+                placeholder="Nombre y apellido"
+                placeholderTextColor="#666"
+                value={name}
+                onChangeText={validateName}
+                autoCapitalize="words"
+              />
+              {nameError ? (
+                <Text style={styles.errorText}>{nameError}</Text>
+              ) : null}
+
+              <TextInput
+                style={styles.input}
+                placeholder="Correo electrónico"
+                placeholderTextColor="#666"
+                value={email}
+                onChangeText={validateEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              {emailError ? (
+                <Text style={styles.errorText}>{emailError}</Text>
+              ) : null}
+
+              <TextInput
+                style={styles.input}
+                placeholder="Contraseña"
+                placeholderTextColor="#666"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Confirmar contraseña"
+                placeholderTextColor="#666"
+                value={confirmPassword}
+                onChangeText={validateConfirmPassword}
+                secureTextEntry
+              />
+              {confirmPasswordError ? (
+                <Text style={styles.errorText}>{confirmPasswordError}</Text>
+              ) : null}
+
+              <TouchableOpacity
+                style={styles.registerButton}
+                onPress={handleRegister}
+              >
+                <Text style={styles.registerButtonText}>REGISTRARSE</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.loginContainer}
+                onPress={() => navigation.navigate("Login")}
+              >
+                <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
+                <Text style={styles.loginLink}>Iniciar Sesión</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </LinearGradient>
   );
 }
@@ -200,8 +219,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-start",
-    padding: 20,
-    paddingTop: 130,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 100 : 80,
   },
   titleContainer: {
     flexDirection: "row",
@@ -224,19 +243,30 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: "#ff3b30",
   },
+  keyboardAvoid: {
+    width: "100%",
+    flexGrow: 1,
+    justifyContent: "flex-end",
+  },
   formContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     padding: 20,
     borderRadius: 15,
     width: "100%",
     alignItems: "center",
-    marginTop: 20,
+    // Dejamos un pequeño margen inferior para que no pegue con la barra del celular
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   welcomeText: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
     marginBottom: 20,
+    textAlign: "center",
   },
   input: {
     width: "100%",
@@ -252,7 +282,6 @@ const styles = StyleSheet.create({
   registerButton: {
     backgroundColor: "#ff3b30",
     paddingVertical: 15,
-    paddingHorizontal: 60,
     borderRadius: 25,
     width: "100%",
     alignItems: "center",

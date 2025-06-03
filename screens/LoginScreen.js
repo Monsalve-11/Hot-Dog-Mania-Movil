@@ -7,6 +7,11 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Axios from "axios";
@@ -21,16 +26,13 @@ export default function LoginScreen({ navigation }) {
       return;
     }
 
-    Axios.post("http://192.168.1.6:3001/login", {
+    Axios.post("http://192.168.1.34:3001/login", {
       gmail: email,
       contrasena: password,
     })
       .then((response) => {
-        console.log("Respuesta del servidor:", response.data);
-        navigation.navigate("MainMenu");
         if (response.data.success) {
-          Alert.alert("Bienvenido", response.data.message || "Inicio exitoso");
-          navigation.navigate("MainMenu");
+          navigation.navigate("MainMenu", { showSuccessModal: true });
         } else {
           Alert.alert(
             "Error",
@@ -44,66 +46,82 @@ export default function LoginScreen({ navigation }) {
       });
   };
 
+  const screenHeight = Dimensions.get("window").height;
+
   return (
-    <LinearGradient colors={["#1a1a1a", "#2d2d2d"]} style={styles.container}>
+    // 1. El LinearGradient funciona como “fondo” de toda la pantalla
+    <LinearGradient colors={["#1a1a1a", "#2d2d2d"]} style={styles.flex}>
+      {/* 2. Imagen de fondo posicionada absolute para que no se deslice */}
       <Image
         source={require("../assets/fondo.png")}
         style={styles.backgroundImage}
       />
-      <View style={styles.contentContainer}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.star}>★</Text>
-          <Text style={styles.title}>HOT DOG</Text>
-          <Text style={styles.star}>★</Text>
-        </View>
-        <Text style={styles.subtitle}>MANIA</Text>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.welcomeText}>Bienvenido a Hot Dog Mania</Text>
+      {/* 3. Contenedor principal: título + formulario */}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          {/* Título “HOT DOG MANIA” */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.star}>★</Text>
+            <Text style={styles.title}>HOT DOG</Text>
+            <Text style={styles.star}>★</Text>
+          </View>
+          <Text style={styles.subtitle}>MANIA</Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="G-mail"
-            placeholderTextColor="#666"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Contraseña"
-            placeholderTextColor="#666"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-
-          <TouchableOpacity style={styles.loginButton} onPress={login}>
-            <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.forgotPasswordContainer}>
-            <Text style={styles.forgotPasswordText}>
-              ¿Olvidaste tu contraseña?
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.createAccountButton}
-            onPress={() => navigation.navigate("Register")}
+          {/* 4. Aquí envuelvo SÓLO el bloque del formulario con KeyboardAvoidingView */}
+          <KeyboardAvoidingView
+            style={styles.keyboardAvoid}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 120}
           >
-            <Text style={styles.createAccountText}>Crear cuenta</Text>
-          </TouchableOpacity>
+            <View style={styles.formContainer}>
+              <Text style={styles.welcomeText}>Bienvenido a Hot Dog Mania</Text>
+
+              <TextInput
+                style={styles.input}
+                placeholder="G-mail"
+                placeholderTextColor="#666"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Contraseña"
+                placeholderTextColor="#666"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+
+              <TouchableOpacity style={styles.loginButton} onPress={login}>
+                <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.forgotPasswordContainer}>
+                <Text style={styles.forgotPasswordText}>
+                  ¿Olvidaste tu contraseña?
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.createAccountButton}
+                onPress={() => navigation.navigate("Register")}
+              >
+                <Text style={styles.createAccountText}>Crear cuenta</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flex: {
     flex: 1,
   },
   backgroundImage: {
@@ -112,12 +130,13 @@ const styles = StyleSheet.create({
     height: "100%",
     resizeMode: "cover",
   },
-  contentContainer: {
+  container: {
     flex: 1,
+    paddingHorizontal: 20,
+    // Ajustamos para que el título quede algo arriba
+    paddingTop: Platform.OS === "ios" ? 100 : 80,
     alignItems: "center",
     justifyContent: "flex-start",
-    padding: 20,
-    paddingTop: 200,
   },
   titleContainer: {
     flexDirection: "row",
@@ -140,19 +159,31 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: "#ff3b30",
   },
+  keyboardAvoid: {
+    width: "100%",
+    // Usamos pequeño flexGrow para que el formulario pueda empujarse hacia arriba
+    flexGrow: 1,
+    justifyContent: "flex-end",
+  },
   formContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     padding: 20,
     borderRadius: 15,
     width: "100%",
-    alignItems: "center",
-    marginTop: 40,
+    // Pillamos el formulario “pegado” al fondo del contenedor para que suba
+    marginBottom: 20,
+    // Sombras suaves para que destaque sobre el fondo
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   welcomeText: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
     marginBottom: 20,
+    textAlign: "center",
   },
   input: {
     width: "100%",
@@ -168,7 +199,6 @@ const styles = StyleSheet.create({
   loginButton: {
     backgroundColor: "#ff3b30",
     paddingVertical: 15,
-    paddingHorizontal: 60,
     borderRadius: 25,
     width: "100%",
     alignItems: "center",
@@ -185,6 +215,7 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     color: "#666",
     fontSize: 14,
+    textAlign: "center",
   },
   createAccountButton: {
     marginTop: 15,
@@ -193,5 +224,6 @@ const styles = StyleSheet.create({
     color: "#ff3b30",
     fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
 });

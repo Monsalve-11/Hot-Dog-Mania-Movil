@@ -7,11 +7,12 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
+import { useNavigation } from "@react-navigation/native";
 
-// Modal de opciones de pago
-const PaymentOptionsModal = ({ visible, onClose }) => {
+const PaymentOptionsModal = ({ visible, onClose, onSelectMetodo }) => {
   return (
     <Modal transparent={true} visible={visible} animationType="fade">
       <View style={styles.overlay}>
@@ -22,29 +23,25 @@ const PaymentOptionsModal = ({ visible, onClose }) => {
 
           <Text style={styles.title}>Opciones de Pago</Text>
 
-          <TouchableOpacity style={styles.paymentOption}>
-            <Image
-              source={require("../assets/nequi.jpeg")}
-              style={styles.paymentImage}
-            />
-            <Text style={styles.paymentText}>Nequi</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.paymentOption}>
-            <Image
-              source={require("../assets/bancolombia.jpeg")}
-              style={styles.paymentImage}
-            />
-            <Text style={styles.paymentText}>Bancolombia</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.paymentOption}>
-            <Image
-              source={require("../assets/paypal.jpeg")}
-              style={styles.paymentImage}
-            />
-            <Text style={styles.paymentText}>PayPal</Text>
-          </TouchableOpacity>
+          {["Nequi", "Bancolombia", "PayPal"].map((metodo) => (
+            <TouchableOpacity
+              key={metodo}
+              style={styles.paymentOption}
+              onPress={() => onSelectMetodo(metodo)}
+            >
+              <Image
+                source={
+                  metodo === "Nequi"
+                    ? require("../assets/nequi.jpeg")
+                    : metodo === "Bancolombia"
+                    ? require("../assets/bancolombia.jpeg")
+                    : require("../assets/paypal.jpeg")
+                }
+                style={styles.paymentImage}
+              />
+              <Text style={styles.paymentText}>{metodo}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
     </Modal>
@@ -52,20 +49,25 @@ const PaymentOptionsModal = ({ visible, onClose }) => {
 };
 
 const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
+  const navigation = useNavigation();
+
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [userId, setUserId] = useState(null);
 
+  // Estados para mostrar mensaje de éxito
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
   useEffect(() => {
-    // Obtener los datos del usuario al cargar el componente
     const obtenerUsuario = async () => {
       try {
-        const response = await fetch("http://192.168.1.6:3001/me", {
+        const response = await fetch("http://192.168.1.34:3001/me", {
           method: "GET",
-          credentials: "include", // Asegúrate de enviar la cookie de la sesión
+          credentials: "include",
         });
         if (response.ok) {
           const data = await response.json();
-          setUserId(data.id); // Asumimos que el backend envía el id del usuario
+          setUserId(data.id);
         } else {
           console.error("No se pudo obtener el usuario");
         }
@@ -81,57 +83,86 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
     0
   );
 
-  // Función para eliminar producto
   const eliminarProducto = useCallback(
     (productoId) => {
-      console.log("Intentando eliminar el producto con ID:", productoId);
-      // Filtrar el carrito, sin modificar el estado original
       const nuevoCarrito = carrito.filter(
         (item) => item.producto.id !== productoId
       );
-      console.log("Carrito actualizado:", nuevoCarrito); // Verificar el carrito después de eliminar
-      setCarrito([...nuevoCarrito]); // Crear una nueva copia para asegurar la reactividad de React
+      setCarrito([...nuevoCarrito]);
     },
     [carrito, setCarrito]
   );
 
-  // Función para procesar el pago
-  const procesarPago = async () => {
+  const procesarPago = () => {
     if (!userId) {
-      console.error("Usuario no autenticado");
+      Alert.alert("Error", "Debes iniciar sesión para realizar un pago.");
+      return;
+    }
+    if (!carrito || carrito.length === 0) {
+      Alert.alert("Carrito vacío", "No hay productos para pagar.");
+      return;
+    }
+    setPaymentModalVisible(true);
+  };
+
+  const confirmarPago = async (metodo, carritoLocal = carrito) => {
+    if (!userId) {
+      Alert.alert("Error", "Debes iniciar sesión para realizar un pago.");
+      return;
+    }
+    if (!carritoLocal || carritoLocal.length === 0) {
+      Alert.alert("Carrito vacío", "No hay productos para pagar.");
+      setPaymentModalVisible(false);
       return;
     }
 
-    console.log("Mostrando opciones de pago"); // Agrega este log
+    const productosValidos = carritoLocal.filter(
+      (item) => item.producto && item.opciones
+    );
 
     const datosFactura = {
-      userId: userId,
-      productos: carrito.map((item) => ({
+      productos: productosValidos.map((item) => ({
         id: item.producto.id,
         nombre: item.producto.nombre,
-        sin: item.opciones.sin,
         cantidad: item.opciones.cantidad,
         precio: item.producto.precio,
       })),
-      total: total,
+      total: productosValidos.reduce(
+        (sum, item) => sum + item.producto.precio * item.opciones.cantidad,
+        0
+      ),
+      metodo_pago: metodo,
     };
 
     try {
-      const response = await fetch("http://192.168.1.6:3001/factura", {
+      const response = await fetch("http://192.168.1.34:3001/factura", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(datosFactura),
+        credentials: "include",
       });
 
       if (response.ok) {
-        console.log("Factura enviada correctamente");
-        setPaymentModalVisible(true); // Abre el modal de pago
+        setPaymentModalVisible(false);
+        setCarrito([]); // Vaciar carrito tras pago exitoso
+
+        // Mostrar mensaje personalizado con loader
+        setSuccessMessage(`Pago realizado con éxito mediante ${metodo}`);
+        setShowSuccess(true);
+
+        setTimeout(() => {
+          setShowSuccess(false);
+          onClose(); // Cierra modal carrito
+          navigation.navigate("MainMenu"); // Navega a MainMenu
+        }, 3000);
       } else {
+        Alert.alert("Error", "Error al procesar el pago");
         console.error("Error al enviar la factura");
       }
     } catch (error) {
+      Alert.alert("Error", "Error de red al procesar el pago");
       console.error("Error de red:", error);
     }
   };
@@ -165,19 +196,20 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
 
               return (
                 <View style={styles.item}>
-                  <Text style={styles.desc}>
-                    {item.opciones.cantidad} - {item.producto.nombre}
-                  </Text>
+                  <View style={styles.itemRow}>
+                    <Text style={styles.desc}>
+                      {item.opciones.cantidad} - {item.producto.nombre}
+                    </Text>
+                    <Text style={styles.precio}>
+                      x{" "}
+                      {(
+                        item.producto.precio * item.opciones.cantidad
+                      ).toLocaleString()}
+                    </Text>
+                  </View>
                   {opcionesSin ? (
                     <Text style={styles.opcionesSin}>{opcionesSin}</Text>
                   ) : null}
-                  <Text style={styles.precio}>
-                    x{" "}
-                    {`${(
-                      item.producto.precio * item.opciones.cantidad
-                    ).toLocaleString()}`}
-                  </Text>
-
                   <TouchableOpacity
                     style={styles.eliminarBtn}
                     onPress={() => eliminarProducto(item.producto.id)}
@@ -197,13 +229,26 @@ const CarritoModal = ({ visible, onClose, carrito, setCarrito }) => {
           <TouchableOpacity style={styles.pagarBtn} onPress={procesarPago}>
             <Text style={styles.pagarText}>PAGAR</Text>
           </TouchableOpacity>
+
+          {showSuccess && (
+            <View style={styles.successContainer}>
+              <Icon
+                name="spinner"
+                size={40}
+                color="#ff3d00"
+                style={{ marginBottom: 10 }}
+                spin
+              />
+              <Text style={styles.successText}>{successMessage}</Text>
+            </View>
+          )}
         </View>
       </View>
 
-      {/* Modal de opciones de pago */}
       <PaymentOptionsModal
         visible={paymentModalVisible}
         onClose={() => setPaymentModalVisible(false)}
+        onSelectMetodo={(metodo) => confirmarPago(metodo, carrito)}
       />
     </Modal>
   );
@@ -245,13 +290,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   item: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
     width: "100%",
     marginVertical: 8,
     paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+  },
+  itemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   desc: {
     fontSize: 16,
@@ -274,7 +323,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 15,
-    marginLeft: 10,
+    marginTop: 8,
+    alignSelf: "center",
   },
   eliminarText: {
     color: "white",
@@ -310,7 +360,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 18,
   },
-
   paymentOption: {
     flexDirection: "row",
     alignItems: "center",
@@ -324,5 +373,28 @@ const styles = StyleSheet.create({
   paymentText: {
     fontSize: 18,
     fontWeight: "bold",
+  },
+  successContainer: {
+    position: "absolute",
+    top: "40%",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: "#ff3d00",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 5,
+  },
+  successText: {
+    color: "#ff3d00",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });

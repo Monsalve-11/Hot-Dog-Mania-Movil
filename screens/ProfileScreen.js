@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Button,
   ActivityIndicator,
   Alert,
   TouchableOpacity,
@@ -11,13 +10,16 @@ import {
 import axios from "axios";
 import BottomNav from "../components/barraInferior";
 
+// Importa LinearGradient para Expo
+import { LinearGradient } from "expo-linear-gradient";
+
 export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     axios
-      .get("http://192.168.1.6:3001/me")
+      .get("http://192.168.1.34:3001/me")
       .then((response) => {
         setUser(response.data);
         setLoading(false);
@@ -33,7 +35,7 @@ export default function ProfileScreen({ navigation }) {
 
   const handleLogout = () => {
     axios
-      .post("http://192.168.1.6:3001/logout")
+      .post("http://192.168.1.34:3001/logout")
       .then(() => {
         navigation.replace("Login");
       })
@@ -58,7 +60,7 @@ export default function ProfileScreen({ navigation }) {
 
   if (!user) {
     return (
-      <View style={styles.container}>
+      <LinearGradient colors={["#ffffff", "#f04720"]} style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logo}>
@@ -70,12 +72,12 @@ export default function ProfileScreen({ navigation }) {
 
         <Text style={styles.text}>No hay datos de usuario</Text>
         <BottomNav />
-      </View>
+      </LinearGradient>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={["#ffffff", "#f04720"]} style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.logo}>
@@ -98,14 +100,13 @@ export default function ProfileScreen({ navigation }) {
       </TouchableOpacity>
 
       <BottomNav />
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ddd",
     paddingTop: 40,
     paddingHorizontal: 15,
     justifyContent: "flex-start",

@@ -12,10 +12,8 @@ app.use(
   })
 );
 
-// JSON parser
 app.use(express.json());
 
-// Conexión a MySQL
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -30,7 +28,6 @@ db.connect((err) => {
   }
 });
 
-// Middleware de sesión sin MySQLStore (usa almacenamiento en memoria)
 app.use(
   session({
     key: "session_id",
@@ -38,22 +35,21 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      maxAge: 86400000, // 1 día
+      maxAge: 86400000,
       httpOnly: true,
       secure: false,
       sameSite: "lax",
     },
   })
 );
-// Middleware para proteger rutas
+
 function requireLogin(req, res, next) {
-  if (!req.session.userId) {
+  if (!req.session.userId && !(req.session.user && req.session.user.id)) {
     return res.status(401).json({ message: "Debes iniciar sesión" });
   }
   next();
 }
 
-// Registro
 app.post("/register", (req, res) => {
   const { nombre, gmail, contrasena } = req.body;
   if (!nombre || !gmail || !contrasena) {
@@ -72,7 +68,6 @@ app.post("/register", (req, res) => {
   });
 });
 
-// Login
 app.post("/login", (req, res) => {
   const { gmail, contrasena } = req.body;
   const sql =
@@ -82,17 +77,17 @@ app.post("/login", (req, res) => {
     if (results.length === 0) {
       return res.status(401).json({ message: "Credenciales incorrectas" });
     }
-    // Crear objeto Usuario con los datos
+
     const userObj = new Usuario(
       results[0].id,
       results[0].nombre,
       results[0].gmail
     );
 
-    // Guardar la instancia en sesión (serializa solo los datos básicos, no métodos)
     req.session.user = userObj;
+    req.session.userId = results[0].id;
 
-    console.log("Usuario logueado:", req.session); // Verifica que el ID se guarde correctamente
+    console.log("Usuario logueado:", req.session);
 
     res.json({
       success: true,
@@ -100,17 +95,17 @@ app.post("/login", (req, res) => {
       user: {
         id: results[0].id,
         nombre: results[0].nombre,
-        gmail: results[0].gmail, // Incluyendo el correo
+        gmail: results[0].gmail,
       },
     });
   });
 });
 
-// Ruta para obtener los datos del usuario
 app.get("/me", (req, res) => {
-  // Puedes acceder a métodos del objeto Usuario aquí si lo necesitas
   const usuario = req.session.user;
-
+  if (!usuario) {
+    return res.status(401).json({ message: "Debes iniciar sesión" });
+  }
   res.json({
     id: usuario.id,
     nombre: usuario.nombre,
@@ -127,7 +122,6 @@ app.post("/logout", (req, res) => {
   });
 });
 
-// Obtener productos (público)
 app.get("/productos", (req, res) => {
   const sql =
     "SELECT id, nombre, descripcion, precio, imagen_url, seccion, cantidad FROM productos";
@@ -140,9 +134,8 @@ app.get("/productos", (req, res) => {
   });
 });
 
-// --- RUTAS PROTEGIDAS FAVORITOS ---
+// Favoritos agregar, eliminar y obtener (igual que antes)...
 
-// Agregar favorito
 app.post("/favoritos/agregar", requireLogin, (req, res) => {
   const user_id = req.session.userId;
   const { product_id } = req.body;
@@ -150,37 +143,16 @@ app.post("/favoritos/agregar", requireLogin, (req, res) => {
     return res.status(400).json({ message: "product_id es requerido" });
   }
 
-  // Primero, actualizar el estado en la tabla productos
-  const updateFavorite = "UPDATE productos SET favorito = 'si' WHERE id = ?";
-  db.query(updateFavorite, [product_id], (err, result) => {
+  const sql = "INSERT INTO favoritos (user_id, product_id) VALUES (?, ?)";
+  db.query(sql, [user_id, product_id], (err) => {
     if (err) {
-      console.error(
-        "❌ Error al actualizar el estado de favorito en productos:",
-        err
-      );
-      return res.status(500).json({
-        message: "Error al actualizar el favorito en la base de datos",
-      });
+      console.error("❌ Error al agregar favorito:", err);
+      return res.status(500).json({ message: "Error al agregar favorito" });
     }
-
-    // Verificar que se haya actualizado correctamente
-    console.log(
-      `Estado favorito actualizado a 'si' para producto con id: ${product_id}`
-    );
-
-    // Ahora, agregar a la tabla de favoritos
-    const sql = "INSERT INTO favoritos (user_id, product_id) VALUES (?, ?)";
-    db.query(sql, [user_id, product_id], (err) => {
-      if (err) {
-        console.error("❌ Error al agregar favorito:", err);
-        return res.status(500).json({ message: "Error al agregar favorito" });
-      }
-      res.json({ message: "Producto agregado a favoritos" });
-    });
+    res.json({ message: "Producto agregado a favoritos" });
   });
 });
 
-// Eliminar favorito
 app.post("/favoritos/eliminar", requireLogin, (req, res) => {
   const user_id = req.session.userId;
   const { product_id } = req.body;
@@ -188,34 +160,13 @@ app.post("/favoritos/eliminar", requireLogin, (req, res) => {
     return res.status(400).json({ message: "product_id es requerido" });
   }
 
-  // Eliminar de la tabla favoritos
   const sql = "DELETE FROM favoritos WHERE user_id = ? AND product_id = ?";
   db.query(sql, [user_id, product_id], (err) => {
     if (err) {
       console.error("❌ Error al eliminar favorito:", err);
       return res.status(500).json({ message: "Error al eliminar favorito" });
     }
-
-    // Ahora, actualizar el estado en la tabla productos
-    const updateFavorite = "UPDATE productos SET favorito = 'no' WHERE id = ?";
-    db.query(updateFavorite, [product_id], (err) => {
-      if (err) {
-        console.error(
-          "❌ Error al actualizar el estado de favorito en productos:",
-          err
-        );
-        return res.status(500).json({
-          message: "Error al actualizar el favorito en la base de datos",
-        });
-      }
-
-      // Verificar que se haya actualizado correctamente
-      console.log(
-        `Estado favorito actualizado a 'no' para producto con id: ${product_id}`
-      );
-
-      res.json({ message: "Producto eliminado de favoritos" });
-    });
+    res.json({ message: "Producto eliminado de favoritos" });
   });
 });
 
@@ -236,22 +187,29 @@ app.get("/favoritos", requireLogin, (req, res) => {
   });
 });
 
-// Ruta para crear una factura
 app.post("/factura", requireLogin, (req, res) => {
-  const userId = req.session.userId; // Obtener el ID del usuario de la sesión
-  const { productos, total } = req.body;
+  const userId =
+    req.session.userId || (req.session.user && req.session.user.id);
+  if (!userId) {
+    return res.status(401).json({ message: "Debes iniciar sesión" });
+  }
 
-  // Insertar la factura
-  const sqlFactura = "INSERT INTO facturas (user_id, total) VALUES (?, ?)";
-  db.query(sqlFactura, [userId, total], (err, result) => {
+  const { productos, total, metodo_pago } = req.body;
+
+  if (!metodo_pago) {
+    return res.status(400).json({ message: "Método de pago es requerido" });
+  }
+
+  const sqlFactura =
+    "INSERT INTO facturas (user_id, total, metodo_pago, estado) VALUES (?, ?, ?, 'pagada')";
+  db.query(sqlFactura, [userId, total, metodo_pago], (err, result) => {
     if (err) {
       console.error("❌ Error al registrar la factura:", err);
       return res.status(500).json({ message: "Error al registrar la factura" });
     }
 
-    const facturaId = result.insertId; // Obtener el ID de la factura recién insertada
+    const facturaId = result.insertId;
 
-    // Insertar los detalles de la factura
     const detallesFactura = productos.map((producto) => [
       facturaId,
       producto.id,
@@ -283,10 +241,9 @@ app.get("/misfacturas", (req, res) => {
   }
 
   const userId = user.id;
-  console.log("Usuario consultando facturas, userId:", userId);
 
   const sqlFacturas = `
-    SELECT id, fecha_emision, total, estado
+    SELECT id, fecha_emision, total, estado, metodo_pago
     FROM facturas
     WHERE user_id = ?
     ORDER BY fecha_emision DESC
@@ -301,8 +258,6 @@ app.get("/misfacturas", (req, res) => {
     if (facturas.length === 0) return res.json([]);
 
     const facturaIds = facturas.map((f) => f.id);
-
-    // Armar placeholders para IN (?, ?, ?...)
     const placeholders = facturaIds.map(() => "?").join(",");
 
     const sqlDetalles = `
@@ -338,7 +293,33 @@ app.get("/misfacturas", (req, res) => {
   });
 });
 
-// Inicia servidor en el puerto 3001
+app.get("/productos/:id", requireLogin, (req, res) => {
+  const productId = req.params.id;
+  const userId = req.session.userId;
+
+  const sqlProducto = "SELECT * FROM productos WHERE id = ?";
+  db.query(sqlProducto, [productId], (err, productos) => {
+    if (err) {
+      return res.status(500).json({ message: "Error al obtener producto" });
+    }
+    if (productos.length === 0) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+    const producto = productos[0];
+
+    // Verificar si está favorito para este usuario
+    const sqlFavorito =
+      "SELECT * FROM favoritos WHERE user_id = ? AND product_id = ?";
+    db.query(sqlFavorito, [userId, productId], (err2, favoritos) => {
+      if (err2) {
+        return res.status(500).json({ message: "Error al verificar favorito" });
+      }
+      producto.favorito = favoritos.length > 0 ? "si" : "no";
+      res.json(producto);
+    });
+  });
+});
+
 app.listen(3001, () => {
   console.log("🚀 Servidor corriendo en el puerto 3001");
 });
